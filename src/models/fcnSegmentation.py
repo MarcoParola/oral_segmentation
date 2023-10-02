@@ -14,10 +14,18 @@ class FcnSegmentationNet(LightningModule):
         super(FcnSegmentationNet, self).__init__()
         self.pretrained_model = models.segmentation.fcn_resnet50(pretrained=True)
         self.pretrained_model.classifier[4] = nn.Conv2d(512, num_classes, kernel_size=(1, 1), stride=(1, 1))
+        # add sigmoid activation
+        self.last_layer = nn.Sigmoid()
+        self.lr = lr
+        self.loss = nn.MSELoss()
 
     def forward(self, x):
         out = self.pretrained_model(x)['out']
+        out = self.last_layer(out)
         return out
+
+    def predict_step(self, batch, batch_idx):
+        return self(batch[0])
 
     def training_step(self, batch, batch_idx):
         return self._common_step(batch, batch_idx, "train")
@@ -32,12 +40,14 @@ class FcnSegmentationNet(LightningModule):
         self.log('test_accuracy', accuracy)
 
     def configure_optimizers(self):
-        return torch.optim.Adam(self.parameters(), lr=self.hparams.lr)
+        return torch.optim.Adam(self.parameters(), lr=self.lr)
 
     def _common_step(self, batch, batch_idx, stage):
         img, actual_mask = batch
-        x = self.pretrained_model(x)['out']
-        mask_predicted = self(x)
+        x = self.pretrained_model(img)['out']
+        x = self.last_layer(x)
+        mask_predicted = x
+        #mask_predicted = self(x)
         loss = self.loss(mask_predicted, actual_mask)
         self.log(f"{stage}_loss", loss, on_step=True)
         return loss

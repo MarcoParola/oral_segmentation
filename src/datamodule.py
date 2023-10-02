@@ -3,7 +3,7 @@ from pytorch_lightning import LightningDataModule
 
 from src.dataset import OralSegmentationDataset
 
-class OralClassificationDataModule(LightningDataModule):
+class OralSegmentationDataModule(LightningDataModule):
     def __init__(self, train, val, test, batch_size=32, train_transform=None, val_transform=None, test_transform=None, transform=None):
         super().__init__()
         if train_transform is None:
