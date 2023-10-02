@@ -4,7 +4,6 @@ model:
   #name: shufflenet_v2_x1_0
   #weights: ShuffleNet_V2_X1_0_Weights.IMAGENET1K_V1
 
-
 dataset:
   train: ./data/train.json
   val: ./data/val.json

@@ -4,14 +4,13 @@ import torch
 import numpy as np
 import torch.nn as nn
 from torchvision import models
-from matplotlib import pyplot as plt
-from ..dataset import OralSegmentationDataset
-from torchvision.models.segmentation.deeplabv3 import DeepLabHead
+from pytorch_lightning import LightningModule
+#from torchvision.models.segmentation.deeplabv3 import DeepLabHead
 
 
 # Define the neural network architecture
-class FcnSegmentationNet(nn.Module):
-    def __init__(self, num_classes):
+class FcnSegmentationNet(LightningModule):
+    def __init__(self, num_classes, lr=10e-4):
         super(FcnSegmentationNet, self).__init__()
         self.pretrained_model = models.segmentation.fcn_resnet50(pretrained=True)
         self.pretrained_model.classifier[4] = nn.Conv2d(512, num_classes, kernel_size=(1, 1), stride=(1, 1))
@@ -19,6 +18,29 @@ class FcnSegmentationNet(nn.Module):
     def forward(self, x):
         out = self.pretrained_model(x)['out']
         return out
+
+    def training_step(self, batch, batch_idx):
+        return self._common_step(batch, batch_idx, "train")
+
+    def validation_step(self, batch, batch_idx):
+        self._common_step(batch, batch_idx, "val") 
+        
+    def test_step(self, batch, batch_idx):
+        self._common_step(batch, batch_idx, "test")
+        output = self(batch)
+        accuracy = accuracy_score(output, batch['target'])
+        self.log('test_accuracy', accuracy)
+
+    def configure_optimizers(self):
+        return torch.optim.Adam(self.parameters(), lr=self.hparams.lr)
+
+    def _common_step(self, batch, batch_idx, stage):
+        img, actual_mask = batch
+        x = self.pretrained_model(x)['out']
+        mask_predicted = self(x)
+        loss = self.loss(mask_predicted, actual_mask)
+        self.log(f"{stage}_loss", loss, on_step=True)
+        return loss
 
 
 '''
@@ -38,6 +60,8 @@ class DeeplabSegmentationNet(nn.Module):
 
 if __name__ == "__main__":
     import torchvision.transforms as transforms
+    from src.dataset import OralSegmentationDataset
+    from matplotlib import pyplot as plt
 
     dataset = OralSegmentationDataset(
         "data/train.json",
