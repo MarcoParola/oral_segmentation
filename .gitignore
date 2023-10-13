@@ -122,5 +122,7 @@ cython_debug/
 
 __init__.py
 
+outputs/
+
 
 
