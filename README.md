@@ -1,7 +1,7 @@
 # **Oral segmentation**
 
-[![license](https://img.shields.io/github/license/MarcoParola/oral-segmentation?style=plastic)]()
-[![size](https://img.shields.io/github/languages/code-size/MarcoParola/oral-segmentation?style=plastic)]()
+[![license](https://img.shields.io/github/license/MarcoParola/oral_segmentation?style=plastic)]()
+[![size](https://img.shields.io/github/languages/code-size/MarcoParola/oral_segmentation?style=plastic)]()
 
 This github repo is to publicly release the code of oral segmentation.
 

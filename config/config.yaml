@@ -1,23 +1,21 @@
 
 model:
-  num_classes: 3
-  #name: shufflenet_v2_x1_0
-  #weights: ShuffleNet_V2_X1_0_Weights.IMAGENET1K_V1
+  num_classes: 1
 
 dataset:
   train: ./data/train.json
   val: ./data/val.json
   test: ./data/test.json
-  resize: 224
+  resize: 128
 
 train:
   save_path: "./models/"
   seed: -1
   batch_size: 16
-  lr: 0.00008
+  lr: 5e-6
   accelerator: "gpu"
   devices: 1
-  max_epochs: 15
+  max_epochs: 1
 
 log:  
   path: "./logs/"

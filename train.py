@@ -1,13 +1,20 @@
 import os
 import hydra
 import torch
-import pytorch_lightning
+import pytorch_lightning as pl
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.utils.multiclass import unique_labels
 
-from src.models.fcnSegmentation import FcnSegmentationNet
-from src.datamodule import OralSegmentationDataModule
+from src.models.fcn import FcnSegmentationNet
+from src.models.deeplab import DeeplabSegmentationNet
+from src.dataset import OralSegmentationDataset
+from torch.utils.data import DataLoader
+
+import torch
+import torch.nn as nn
+from torch.utils.data import DataLoader
+from torchvision import models
 
 from src.utils import *
 
@@ -26,30 +33,33 @@ def main(cfg):
     loggers = get_loggers(cfg)
 
     # model
-    model = FcnSegmentationNet(
+    model_deeplab = DeeplabSegmentationNet(
         #model=cfg.model.name,
         #weights=cfg.model.weights,
-        num_classes=cfg.model.num_classes,
+        num_classes=1,
         lr=cfg.train.lr,
     )
 
-    # datasets and transformations
-    train_img_tranform, val_img_tranform, test_img_tranform, img_tranform = get_transformations(cfg)
-    data = OralSegmentationDataModule(
-        train=cfg.dataset.train,
-        val=cfg.dataset.val,
-        test=cfg.dataset.test,
-        batch_size=cfg.train.batch_size,
-        train_transform = train_img_tranform,
-        val_transform = val_img_tranform,
-        test_transform = test_img_tranform,
-        transform = img_tranform,
+    
+    model_fcn = FcnSegmentationNet(
+        #model=cfg.model.name,
+        #weights=cfg.model.weights,
+        num_classes=1,
+        lr=cfg.train.lr,
     )
-    # TODO magari poi lo leviamo, ma non è banale fare augmentation con le maschere
-    train_img_tranform, val_img_tranform, test_img_tranform = None, None, None
+    
+
+    # datasets and dataloaders
+    train_img_tranform, val_img_tranform, test_img_tranform, img_tranform = get_transformations(cfg)
+    train_dataset = OralSegmentationDataset("data/train.json",transform=img_tranform)
+    val_dataset = OralSegmentationDataset("data/val.json",transform=img_tranform)
+    test_dataset = OralSegmentationDataset("data/test.json",transform=img_tranform)  
+    train_loader = DataLoader(train_dataset, batch_size=64, shuffle=True)
+    val_loader = DataLoader(val_dataset, batch_size=64)
+    test_loader = DataLoader(test_dataset, batch_size=64)
 
     # training
-    trainer = pytorch_lightning.Trainer(
+    trainer = pl.Trainer(
         logger=loggers,
         callbacks=callbacks,
         accelerator=cfg.train.accelerator,
@@ -57,48 +67,45 @@ def main(cfg):
         log_every_n_steps=1,
         max_epochs=cfg.train.max_epochs,
     )
-    trainer.fit(model, data)
 
+    '''
+    images, masks = next(iter(test_loader))
+    outputs_fcn = model_fcn(images)
+    outputs_deeplab = model_deeplab(images)
+    print(outputs_fcn.shape, outputs_deeplab.shape, masks.shape, images.shape)
 
-    # prediction
-    predictions = trainer.predict(model, data)  
-    #print('oooooooo',type(predictions[0]), len(predictions[0])) 
-    predictions = predictions[0]
-    test = data.test_dataloader()
-    #print(type(test), len(test))
-    test = next(iter(test))
-    #print(type(test), type(test[0]), test[0].shape, test[1].shape, len(test))
-    images, masks = test[0], test[1]
-    for i in range(len(images)):
+    for i in range(5):
         image, mask = images[i], masks[i]
-        #print(i, type(image), image.shape, type(mask), mask.shape)  
-        plt.imshow(image.squeeze().permute(1,2,0))
-        plt.imshow(mask.squeeze().detach().numpy(), alpha=0.4)
+        fig, (ax1, ax2, ax3, ax4) = plt.subplots(1, 4, figsize=(12, 3))
+        ax1.imshow(image.squeeze().permute(1,2,0))
+        ax2.imshow(image.squeeze().permute(1,2,0), alpha=0.5)
+        ax3.imshow(image.squeeze().permute(1,2,0), alpha=0.5)
+        ax2.imshow(mask.permute(1,2,0).numpy(), alpha=0.6, cmap='gray')
+        ax3.imshow(outputs_fcn[i].detach().permute(1,2,0).numpy(), alpha=0.6, cmap='gray')
+        ax4.imshow(outputs_deeplab[i].detach().permute(1,2,0).numpy(), alpha=0.6, cmap='gray')
+        print(outputs_fcn[i].max(), outputs_fcn[i].min(), outputs_deeplab[i].max(), outputs_deeplab[i].min())
         plt.show()
+    '''
 
-        plt.imshow(image.squeeze().permute(1,2,0))
-        print(i, 'aaaaaaaaaaa', predictions[i].shape, predictions[i], image)
-        plt.imshow(predictions[i].squeeze().detach().permute(1,2,0).numpy(), alpha=0.7)
+    trainer.fit(model_fcn, train_loader, val_loader)
+
+    # Evaluate the model on the test set
+    #trainer.test(model, test_loader)
+
+    # plot some segmentation predictions in a plot containing three subfigure: image - actual - predicted
+    images, masks = next(iter(test_loader))
+    outputs = model_fcn(images)
+    for i in range(20):
+        image, mask = images[i], masks[i]
+        fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(12, 4))
+        ax1.imshow(image.squeeze().permute(1,2,0))
+        ax2.imshow(image.squeeze().permute(1,2,0), alpha=0.5)
+        ax3.imshow(image.squeeze().permute(1,2,0), alpha=0.5)
+        ax2.imshow(mask.permute(1,2,0).numpy(), alpha=0.6, cmap='gray')
+        ax3.imshow(outputs[i].detach().permute(1,2,0).numpy(), alpha=0.6, cmap='gray')
+        print(outputs[i].shape, outputs[i].max(), outputs[i].min())
         plt.show()
     
-    '''
-    predictions = torch.cat(predictions, dim=0)
-    predictions = torch.argmax(predictions, dim=1)
-    gt = torch.cat([y for _, y in data.test_dataloader()], dim=0)
-
-    print(classification_report(gt, predictions))
-
-    class_names = np.array(['Class 0', 'Class 1', 'Class 2'])
-    log_dir = 'logs/oral/' + get_last_version('logs/oral')
-    log_confusion_matrix(gt, predictions, classes=class_names, log_dir=log_dir) 
-
-    # save model
-    model_path = os.path.join(cfg.train.save_path, cfg.model.name)
-    os.makedirs(model_path, exist_ok=True)
-    model_name = 'model' + '_' + str(len(os.listdir(model_path))) + '.pt'
-    model_name = os.path.join(model_path, model_name)
-    torch.save(model.state_dict(), model_name)
-    '''
 
 if __name__ == "__main__":
     main()

@@ -121,6 +121,9 @@ dmypy.json
 cython_debug/
 
 __init__.py
-
-
+checkpoints/
+data/
+logs/
+outputs/
+lightning_logs/
 
