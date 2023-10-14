@@ -16,6 +16,11 @@ env/Scripts/activate
 python -m pip install -r requirements.txt
 mkdir data
 ```
+
+If you download more libs, freeze them in the requirement file:
+```
+pyhton -m pip freeze > requirements.txt
+```
 Then you can download the oral coco-dataset (both images and json file) from TODO-put-link. Copy them into `data` folder and unzip the file `oral1.zip`.
 
 ## Usage
