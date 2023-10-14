@@ -58,10 +58,8 @@ def main(cfg):
         "data/train.json",
         transform=transforms.Compose([
             transforms.Resize((cfg.dataset.resize, cfg.dataset.resize), antialias=True),
-            transforms.ToTensor()
-        ])
+            transforms.ToTensor()])
     )
-
     for i in range(dataset.__len__()):
         image, mask = dataset.__getitem__(i)
         print(i, dataset.dataset["images"][i]["file_name"], image.shape, mask.shape, mask.max(), mask.min(), image.max(), image.min())
@@ -75,15 +73,12 @@ def main(cfg):
         plt.savefig(f"../outputs/train/{i}.png")
 
 
-
     dataset = OralSegmentationDataset(
         "data/val.json",
         transform=transforms.Compose([
             transforms.Resize((cfg.dataset.resize, cfg.dataset.resize), antialias=True),
-            transforms.ToTensor()
-        ])
+            transforms.ToTensor()])
     )
-
     for i in range(dataset.__len__()):
         image, mask = dataset.__getitem__(i)
         print(i, dataset.dataset["images"][i]["file_name"], image.shape, mask.shape, mask.max(), mask.min(), image.max(), image.min())
@@ -97,15 +92,12 @@ def main(cfg):
         plt.savefig(f"../outputs/val/{i}.png")
 
     
-    
     dataset = OralSegmentationDataset(
         "data/test.json",
         transform=transforms.Compose([
             transforms.Resize((cfg.dataset.resize, cfg.dataset.resize), antialias=True),
-            transforms.ToTensor()
-        ])
+            transforms.ToTensor()])
     )
-
     for i in range(dataset.__len__()):
         image, mask = dataset.__getitem__(i)
         print(i, dataset.dataset["images"][i]["file_name"], image.shape, mask.shape, mask.max(), mask.min(), image.max(), image.min())
@@ -117,8 +109,6 @@ def main(cfg):
         if not os.path.exists("../outputs/test"):
             os.makedirs("../outputs/test")
         plt.savefig(f"../outputs/test/{i}.png")
-
-
 
 
 if __name__ == "__main__":

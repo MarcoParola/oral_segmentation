@@ -33,20 +33,8 @@ def main(cfg):
     loggers = get_loggers(cfg)
 
     # model
-    model_deeplab = DeeplabSegmentationNet(
-        #model=cfg.model.name,
-        #weights=cfg.model.weights,
-        num_classes=1,
-        lr=cfg.train.lr,
-    )
-
-    
-    model_fcn = FcnSegmentationNet(
-        #model=cfg.model.name,
-        #weights=cfg.model.weights,
-        num_classes=1,
-        lr=cfg.train.lr,
-    )
+    model = DeeplabSegmentationNet(num_classes=1, lr=cfg.train.lr)
+    #model = FcnSegmentationNet(num_classes=1, lr=cfg.train.lr)
     
 
     # datasets and dataloaders
@@ -68,33 +56,14 @@ def main(cfg):
         max_epochs=cfg.train.max_epochs,
     )
 
-    '''
-    images, masks = next(iter(test_loader))
-    outputs_fcn = model_fcn(images)
-    outputs_deeplab = model_deeplab(images)
-    print(outputs_fcn.shape, outputs_deeplab.shape, masks.shape, images.shape)
-
-    for i in range(5):
-        image, mask = images[i], masks[i]
-        fig, (ax1, ax2, ax3, ax4) = plt.subplots(1, 4, figsize=(12, 3))
-        ax1.imshow(image.squeeze().permute(1,2,0))
-        ax2.imshow(image.squeeze().permute(1,2,0), alpha=0.5)
-        ax3.imshow(image.squeeze().permute(1,2,0), alpha=0.5)
-        ax2.imshow(mask.permute(1,2,0).numpy(), alpha=0.6, cmap='gray')
-        ax3.imshow(outputs_fcn[i].detach().permute(1,2,0).numpy(), alpha=0.6, cmap='gray')
-        ax4.imshow(outputs_deeplab[i].detach().permute(1,2,0).numpy(), alpha=0.6, cmap='gray')
-        print(outputs_fcn[i].max(), outputs_fcn[i].min(), outputs_deeplab[i].max(), outputs_deeplab[i].min())
-        plt.show()
-    '''
-
-    trainer.fit(model_fcn, train_loader, val_loader)
+    trainer.fit(model, train_loader, val_loader)
 
     # Evaluate the model on the test set
     #trainer.test(model, test_loader)
 
     # plot some segmentation predictions in a plot containing three subfigure: image - actual - predicted
     images, masks = next(iter(test_loader))
-    outputs = model_fcn(images)
+    outputs = model(images)
     for i in range(20):
         image, mask = images[i], masks[i]
         fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(12, 4))
