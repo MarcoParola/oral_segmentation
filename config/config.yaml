@@ -12,10 +12,10 @@ train:
   save_path: "./models/"
   seed: -1
   batch_size: 16
-  lr: 5e-5
+  lr: 1e-5
   accelerator: "gpu"
   devices: 1
-  max_epochs: 2
+  max_epochs: 5
 
 log:  
   path: "./logs/"

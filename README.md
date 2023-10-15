@@ -49,7 +49,11 @@ La parte di **data preparation** la puoi saltare, perchè ti ho gia fornito tutt
 
 Per ora il training è molto facile, intanto riesegui il training con un modello e visualizza i risultati euristicamente con i plot simili a quelli che ti ho mandato in chat.
 ```
-python train.py
+python train.py log.tensorboard=True
+```
+Per visualizzare i log di tensorboard avviare il server con il seguente comando e collegarsi a `localhost:6006`
+```
+python -m tensorboard.main --logdir=logs
 ```
 
 # TODO

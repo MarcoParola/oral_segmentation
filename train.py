@@ -39,9 +39,9 @@ def main(cfg):
 
     # datasets and dataloaders
     train_img_tranform, val_img_tranform, test_img_tranform, img_tranform = get_transformations(cfg)
-    train_dataset = OralSegmentationDataset("data/train.json",transform=img_tranform)
-    val_dataset = OralSegmentationDataset("data/val.json",transform=img_tranform)
-    test_dataset = OralSegmentationDataset("data/test.json",transform=img_tranform)  
+    train_dataset = OralSegmentationDataset(cfg.dataset.train, transform=img_tranform)
+    val_dataset = OralSegmentationDataset(cfg.dataset.val, transform=img_tranform)
+    test_dataset = OralSegmentationDataset(cfg.dataset.test, transform=img_tranform)  
     train_loader = DataLoader(train_dataset, batch_size=64, shuffle=True)
     val_loader = DataLoader(val_dataset, batch_size=64)
     test_loader = DataLoader(test_dataset, batch_size=64)
