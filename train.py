@@ -50,7 +50,8 @@ def main(cfg):
     trainer = pl.Trainer(
         logger=loggers,
         callbacks=callbacks,
-        accelerator=cfg.train.accelerator,
+        #accelerator=cfg.train.accelerator, # Con GPU
+        accelerator='cpu', # Senza GPU
         devices=cfg.train.devices,
         log_every_n_steps=1,
         max_epochs=cfg.train.max_epochs,
