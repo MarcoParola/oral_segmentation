@@ -1,3 +1,6 @@
+## How execute: python -m scripts.dataset-stats --dataset data\train.json --type all
+## How execute: python -m scripts.dataset-stats --dataset data\train.json --type class
+
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
