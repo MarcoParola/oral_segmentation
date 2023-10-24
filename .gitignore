@@ -127,3 +127,5 @@ logs/
 outputs/
 lightning_logs/
 
+photo_output/*
+photo_output_lr1e-6/*

@@ -15,10 +15,12 @@ class DeeplabSegmentationNet(pl.LightningModule):
         self.model.classifier[4] = torch.nn.Conv2d(256, num_classes, kernel_size=(1, 1), stride=(1, 1)) 
         self.num_classes = num_classes
         self.criterion = loss
+        self.lr=lr
 
     def forward(self, x):
         return self.model(x)['out']
 
+    #la variabile batch è fornita automaticamente dal DataLoader
     def training_step(self, batch, batch_idx):
         images, masks = batch
         outputs = self(images)
@@ -41,5 +43,5 @@ class DeeplabSegmentationNet(pl.LightningModule):
         return loss
 
     def configure_optimizers(self):
-        optimizer = optim.Adam(self.parameters(), lr=1e-8)
+        optimizer = optim.Adam(self.parameters(), lr=self.lr)
         return optimizer

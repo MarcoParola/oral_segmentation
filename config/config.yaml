@@ -6,18 +6,21 @@ dataset:
   train: ./data/train.json
   val: ./data/val.json
   test: ./data/test.json
-  resize: 128
+  resize: 448
 
 train:
   save_path: "./models/"
-  seed: -1
-  batch_size: 16
-  lr: 1e-5
+  seed: 42
+  batch_size: 64
+  lr: 1e-6
   accelerator: "gpu"
   devices: 1
-  max_epochs: 5
+  max_epochs: 70
 
 log:  
   path: "./logs/"
   wandb: False
   tensorboard: False
+
+metrics:
+  exclude_back: true

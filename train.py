@@ -42,16 +42,15 @@ def main(cfg):
     train_dataset = OralSegmentationDataset(cfg.dataset.train, transform=img_tranform)
     val_dataset = OralSegmentationDataset(cfg.dataset.val, transform=img_tranform)
     test_dataset = OralSegmentationDataset(cfg.dataset.test, transform=img_tranform)  
-    train_loader = DataLoader(train_dataset, batch_size=64, shuffle=True)
-    val_loader = DataLoader(val_dataset, batch_size=64)
-    test_loader = DataLoader(test_dataset, batch_size=64)
+    train_loader = DataLoader(train_dataset, batch_size=cfg.train.batch_size, shuffle=True)
+    val_loader = DataLoader(val_dataset, batch_size=cfg.train.batch_size)
+    test_loader = DataLoader(test_dataset, batch_size=cfg.train.batch_size)
 
     # training
     trainer = pl.Trainer(
         logger=loggers,
         callbacks=callbacks,
-        #accelerator=cfg.train.accelerator, # Con GPU
-        accelerator='cpu', # Senza GPU
+        accelerator=cfg.train.accelerator, # Con GPU
         devices=cfg.train.devices,
         log_every_n_steps=1,
         max_epochs=cfg.train.max_epochs,
@@ -65,6 +64,25 @@ def main(cfg):
     # plot some segmentation predictions in a plot containing three subfigure: image - actual - predicted
     images, masks = next(iter(test_loader))
     outputs = model(images)
+
+    cartella_destinazione = "photo_output"
+
+    # Verifica se la cartella esiste
+    if os.path.exists(cartella_destinazione):
+        # Se la cartella esiste, svuotala
+        for root, dirs, files in os.walk(cartella_destinazione):
+            for file in files:
+                file_path = os.path.join(root, file)
+                os.remove(file_path)
+            for dir in dirs:
+                dir_path = os.path.join(root, dir)
+                os.rmdir(dir_path)
+        print(f"Cartella '{cartella_destinazione}' svuotata con successo.")
+    else:
+        # Se la cartella non esiste, creala
+        os.makedirs(cartella_destinazione)
+        print(f"Cartella '{cartella_destinazione}' creata con successo.")
+
     for i in range(20):
         image, mask = images[i], masks[i]
         fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(12, 4))
@@ -74,7 +92,13 @@ def main(cfg):
         ax2.imshow(mask.permute(1,2,0).numpy(), alpha=0.6, cmap='gray')
         ax3.imshow(outputs[i].detach().permute(1,2,0).numpy(), alpha=0.6, cmap='gray')
         print(outputs[i].shape, outputs[i].max(), outputs[i].min())
-        plt.show()
+        #plt.show()
+        # Salva la figura come immagine in un file
+        nome_file = os.path.join(cartella_destinazione, f"immagine_{i}.png")
+        plt.savefig(nome_file)
+
+        # Chiudi la figura dopo aver salvato l'immagine
+        plt.close(fig)
     
 
 if __name__ == "__main__":
