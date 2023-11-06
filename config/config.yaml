@@ -1,6 +1,7 @@
 
 model:
   num_classes: 1
+  sgm_type: soft
 
 dataset:
   train: ./data/train.json
@@ -15,12 +16,15 @@ train:
   lr: 1e-6
   accelerator: "gpu"
   devices: 1
-  max_epochs: 70
+  max_epochs: 250
 
 log:  
   path: "./logs/"
   wandb: False
-  tensorboard: False
+  tensorboard: True
+
+checkpoints:
+  path: "./logs/oral/version_25/checkpoints/epoch=149-step=900.ckpt"
 
 metrics:
   exclude_back: true
