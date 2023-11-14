@@ -1,7 +1,8 @@
 
 model:
   num_classes: 1
-  sgm_type: soft
+  sgm_type: hard
+  sgm_threshold: 0.5
 
 dataset:
   train: ./data/train.json
@@ -13,10 +14,12 @@ train:
   save_path: "./models/"
   seed: 42
   batch_size: 64
-  lr: 1e-6
+  lr: 5e-7
   accelerator: "gpu"
+  #accelerator: "cpu"
   devices: 1
-  max_epochs: 250
+  max_epochs: 1000
+  pretrained: True
 
 log:  
   path: "./logs/"
@@ -24,7 +27,7 @@ log:
   tensorboard: True
 
 checkpoints:
-  path: "./logs/oral/version_25/checkpoints/epoch=149-step=900.ckpt"
+  path: "./logs/oral/version_62/checkpoints/epoch=41-step=252.ckpt"
 
 metrics:
   exclude_back: true

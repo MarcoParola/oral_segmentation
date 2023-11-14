@@ -1,5 +1,5 @@
 # Per eseguire soft segmentation: python test.py
-# Per eseguire hard segmentation: python test.py model.sgm_type=hard
+# Per eseguire segmentazione soft aggiungere: model.sgm_type=soft
 
 import os
 import hydra
@@ -12,6 +12,7 @@ from sklearn.utils.multiclass import unique_labels
 
 from src.models.fcn import FcnSegmentationNet
 from src.models.deeplab import DeeplabSegmentationNet
+from src.models.deeplabFE import ModelFE
 from src.dataset import OralSegmentationDataset
 from torch.utils.data import DataLoader
 
@@ -25,9 +26,16 @@ from src.utils import *
 @hydra.main(version_base=None, config_path="./config", config_name="config")
 def main(cfg):
 
+    # to visualize log on tensorboard
+    loggers = get_loggers(cfg)
+
     # load a LightningModule
     checkpoint = torch.load(cfg.checkpoints.path, map_location=lambda storage, loc: storage)
-    model = DeeplabSegmentationNet.load_from_checkpoint(cfg.checkpoints.path)
+    #model = FcnSegmentationNet.load_from_checkpoint(cfg.checkpoints.path, num_classes=cfg.model.num_classes)
+    model = DeeplabSegmentationNet.load_from_checkpoint(cfg.checkpoints.path, num_classes=cfg.model.num_classes)
+    
+    # TODO testare se funziona
+    #model.freeze()
 
     # disable randomness, dropout, etc...
     model.eval()
@@ -38,15 +46,20 @@ def main(cfg):
     test_loader = DataLoader(test_dataset, batch_size=cfg.train.batch_size, num_workers=11)
 
     # Evaluate the model on the test set
-    trainer = pl.Trainer()
+    trainer = pl.Trainer(
+        logger=loggers,
+        accelerator=cfg.train.accelerator,
+        devices=cfg.train.devices,)
     trainer.test(model, test_loader)
 
-    """
     # plot some segmentation predictions in a plot containing three subfigure: image - actual - predicted
     images, masks = next(iter(test_loader))
     #images = images.to('cuda')
     model = model.to('cpu')
-    outputs = model(images)
+    #TODO testare se funziona il codice commentato sotto (Suggerimento di Pytorch)
+    #with torch.no_grad():  # Use no_grad context manager to disable gradient tracking
+        #output = model(input_data)  # Perform inference
+    outputs = model(images) # Call the forward function
     print(cfg.model.sgm_type)
     if cfg.model.sgm_type == "hard":
         outputs = (outputs > 0.5).float()
@@ -85,7 +98,7 @@ def main(cfg):
 
         # Chiudi la figura dopo aver salvato l'immagine
         plt.close(fig)
-    """
+    
 
 if __name__ == "__main__":
     main()

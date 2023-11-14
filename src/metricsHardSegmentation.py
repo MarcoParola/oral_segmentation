@@ -27,8 +27,9 @@ class BinaryMetrics():
         precision = (tp + self.eps) / (tp + fp + self.eps)
         recall = (tp + self.eps) / (tp + fn + self.eps)
         specificity = (tn + self.eps) / (tn + fp + self.eps)
+        jaccard = (tp + self.eps) / (fp + tp + fn + self.eps)
 
-        return pixel_acc, dice, precision, specificity, recall
+        return pixel_acc, dice, precision, specificity, recall, jaccard
 
     def __call__(self, y_true, y_pred):
         # y_true: (N, H, W)
@@ -47,7 +48,7 @@ class BinaryMetrics():
 
         assert activated_pred.shape[1] == 1, 'Predictions must contain only one channel' \
                                              ' when performing binary segmentation'
-        pixel_acc, dice, precision, specificity, recall = self._calculate_overlap_metrics(y_true.to(y_pred.device,
+        pixel_acc, dice, precision, specificity, recall, jaccard = self._calculate_overlap_metrics(y_true.to(y_pred.device,
                                                                                                     dtype=torch.float),
                                                                                           activated_pred)
-        return [pixel_acc, dice, precision, specificity, recall]
+        return [pixel_acc, dice, precision, specificity, recall, jaccard]
