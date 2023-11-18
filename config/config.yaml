@@ -27,6 +27,8 @@ log:
   tensorboard: True
 
 checkpoints:
+  root_path: "./logs/oral"
+  version: "last"
   path: "./logs/oral/version_62/checkpoints/epoch=41-step=252.ckpt"
 
 metrics:

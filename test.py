@@ -1,5 +1,6 @@
 # Per eseguire soft segmentation: python test.py
 # Per eseguire segmentazione soft aggiungere: model.sgm_type=soft
+# Per decidere quale versione testare diversa dall'ultima: checkpoints.version= {numero}
 
 import os
 import hydra
@@ -27,10 +28,28 @@ from src.utils import *
 def main(cfg):
 
     # to visualize log on tensorboard
-    loggers = get_loggers(cfg)
+    #loggers = get_loggers(cfg)
 
     # load a LightningModule
-    checkpoint = torch.load(cfg.checkpoints.path, map_location=lambda storage, loc: storage)
+    #checkpoint = torch.load(cfg.checkpoints.path, map_location=lambda storage, loc: storage)
+
+    if (cfg.checkpoints.version == "last"):
+        folder_checkpoint = get_last_version(cfg.checkpoints.root_path)
+    else:
+        folder_checkpoint = "version_" + str(cfg.checkpoints.version)
+    
+    path_checkpoint = cfg.checkpoints.root_path + "/" + folder_checkpoint + "/checkpoints"
+
+    # check if the forder exists 
+    if not os.path.exists(path_checkpoint):
+        print(f"Version {cfg.checkpoints.version} doesn't exist.")
+        return None
+
+    files = os.listdir(path_checkpoint)
+    checkpoint = torch.load(os.path.join(path_checkpoint, files[0]), map_location=lambda storage, loc: storage)
+    print(os.path.join(path_checkpoint, files[0]))
+
+
     #model = FcnSegmentationNet.load_from_checkpoint(cfg.checkpoints.path, num_classes=cfg.model.num_classes)
     model = DeeplabSegmentationNet.load_from_checkpoint(cfg.checkpoints.path, num_classes=cfg.model.num_classes)
     
@@ -98,6 +117,7 @@ def main(cfg):
 
         # Chiudi la figura dopo aver salvato l'immagine
         plt.close(fig)
+
     
 
 if __name__ == "__main__":
