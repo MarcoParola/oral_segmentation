@@ -44,17 +44,42 @@ python -m scripts.dataset-stats --dataset data\train.json # training set
 python -m scripts.dataset-stats --dataset data\test.json # test set
 ```
 
-### Training
+### Experiments
 La parte di **data preparation** la puoi saltare, perchè ti ho gia fornito tutti i dati preprocessati e puliti, quindi puoi iniziare a guardare da qui. 
 
-Per ora il training è molto facile, intanto riesegui il training con un modello e visualizza i risultati euristicamente con i plot simili a quelli che ti ho mandato in chat.
+## Train
+Il train può essere fatto utilizzando entrambi i modelli implementati (DeepLab e Fcn). Per lanciarlo usare i seguenti comandi.
+-train binario:
 ```
-python train.py log.tensorboard=True
+python train.py 
 ```
+-train multiclasse:
+```
+python train.py model.num_classes=3 (Non ancora implementato)
+```
+
+## Test
+Il test è in grado di recuperare l'ultimo train eseguito o una qualsiasi versione precedente grazie ai checkpoint salvati.
+Per eseguire l'ultima versione:
+```
+python test.py
+```
+Per eseguire una versione specifica:
+```
+python test.py checkpoints.version= {numero}
+```
+Per salvare immagini soft:
+```
+python test.py model.sgm_type=soft
+```
+
+
+
 Per visualizzare i log di tensorboard avviare il server con il seguente comando e collegarsi a `localhost:6006`
 ```
 python -m tensorboard.main --logdir=logs
 ```
+Per ora sono visualizzabili solo i log del train e le metriche finali del test. Manca da testare il funzionamento del plot delle metriche durante il train.
 
 # TODO
 Mini lista guida delle prossime cose da fare, da prendere come linea guida e non come assolutismo; approfondisci tutti gli aspetti che trovi più interessanti. Dedica il tempo che meglio credi, dando priorità agli esami:

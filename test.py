@@ -73,17 +73,14 @@ def main(cfg):
 
     # plot some segmentation predictions in a plot containing three subfigure: image - actual - predicted
     images, masks = next(iter(test_loader))
-    #images = images.to('cuda')
+    #images = images.to('cuda') # TODO fai test: sostituisci 'cuda' con 'gpu'
     model = model.to('cpu')
-    #TODO testare se funziona il codice commentato sotto (Suggerimento di Pytorch)
-    #with torch.no_grad():  # Use no_grad context manager to disable gradient tracking
-        #output = model(input_data)  # Perform inference
     outputs = model(images) # Call the forward function
     print(cfg.model.sgm_type)
     if cfg.model.sgm_type == "hard":
         outputs = (outputs > 0.5).float()
 
-    cartella_destinazione = "photo_output"
+    cartella_destinazione = "photo_output" # TODO metti su config
 
     # Verifica se la cartella esiste
     if os.path.exists(cartella_destinazione):
@@ -101,7 +98,7 @@ def main(cfg):
         os.makedirs(cartella_destinazione)
         print(f"Cartella '{cartella_destinazione}' creata con successo.")
 
-    for i in range(20):
+    for i in range(test_set.__len__()):
         image, mask = images[i], masks[i]
         fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(12, 4))
         ax1.imshow(image.squeeze().permute(1,2,0))
