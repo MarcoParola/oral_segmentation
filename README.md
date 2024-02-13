@@ -3,7 +3,7 @@
 [![license](https://img.shields.io/github/license/MarcoParola/oral_segmentation?style=plastic)]()
 [![size](https://img.shields.io/github/languages/code-size/MarcoParola/oral_segmentation?style=plastic)]()
 
-This github repo is to publicly release the code of oral segmentation.
+This github repo is to publicly release the code of oral segmentation. Here is a quick guide on how to install and use the repo. More information in the [official documentation](doc/README.md).
 
 
 ## Install
@@ -44,10 +44,8 @@ python -m scripts.dataset-stats --dataset data\train.json # training set
 python -m scripts.dataset-stats --dataset data\test.json # test set
 ```
 
-### Experiments
-La parte di **data preparation** la puoi saltare, perchè ti ho gia fornito tutti i dati preprocessati e puliti, quindi puoi iniziare a guardare da qui. 
 
-## Train
+### Train
 Il train può essere fatto utilizzando entrambi i modelli implementati (DeepLab e Fcn). Per lanciarlo usare i seguenti comandi.
 -train binario:
 ```
@@ -58,7 +56,7 @@ python train.py
 python train.py model.num_classes=3 (Non ancora implementato)
 ```
 
-## Test
+### Test
 Il test è in grado di recuperare l'ultimo train eseguito o una qualsiasi versione precedente grazie ai checkpoint salvati.
 Per eseguire l'ultima versione:
 ```
@@ -74,6 +72,7 @@ python test.py model.sgm_type=soft
 ```
 
 
+### View logs and results on tensorboard
 
 Per visualizzare i log di tensorboard avviare il server con il seguente comando e collegarsi a `localhost:6006`
 ```
