@@ -82,15 +82,15 @@ python -m tensorboard.main --logdir=logs
 Per ora sono visualizzabili solo i log del train e le metriche finali del test. Manca da testare il funzionamento del plot delle metriche durante il train.
 
 # TODO
-Mini lista guida delle prossime cose da fare, da prendere come linea guida e non come assolutismo; approfondisci tutti gli aspetti che trovi più interessanti. Dedica il tempo che meglio credi, dando priorità agli esami:
-- Scarica i dati che ti ho messo sulla cartella su gdrive. I dati li mettiamo in un cartalla `data/` contenetenente i tre file json splittati e una cartella `oral1/` da unzippare contenente le immagini. Lancia lo script `dataset-stats.py` per vedere che tutto torni, è per visualizzare le classi (vedi sezione precedente)
-- Rieseguire il codice del training e visualizzare i risultati euristicamente tramite plot. Considera che ho implementato due modelli, fare un po' di training di benchmark vari. Inoltre fare un po' di ricerche online sul layer finale che appendiamo a fine dei modelli (classifier[4]). 
-- parametrizzare la scelta del modello, altrimenti ogni volta tocca mettere mano al codice e modificarlo manualmente. 
-- studiare in letteratura quali funzioni di loss è meglio usare per fare il training di questi modelli
-- studiare alcune metriche in letteratura per misurare le performance della segmentazione (consigli IoU, dice coefficient.. sicuramente ne esistono altre) e implementarle o prenderle pronte da qualche librerie.
-- dopo averle implementate introdure il calcolo di queste metriche durante la fase di testing del modello
-- fare i log su tensorboard (per questo riaggiorniamoci fra un po' che magari si fa insieme in dipartimento)
-- implementare altri modelli pretrained (almeno un altro, magari altri due)
-- valutare di fare la segmentazione per classi (questa cosa la facciamo dopo che hai eseguito più modelli sul dataset e abbiamo calcolato le performance)
+Mini lista guida delle prossime cose da fare, da prendere come linea guida e non come assolutismo; approfondisci tutti gli aspetti che trovi più interessanti. Dedica il tempo che meglio credi:
 
-NB. tutte le modifiche che fai sul codice, non farle sul branch `main`, ma su `develop` che ho appena creato, ogni volta che arriviamo ad una versione stabile, facciamo la merge sul main, ok? Ti lascio sto [link](https://www.atlassian.com/git/tutorials/comparing-workflows/gitflow-workflow) se hai bisogno di vedere qualcosa in più su git
+Documento tesi:
+- crea un nuovo documento latex su [overleaf](https://it.overleaf.com) per la tesi e condividimelo marco.parola@ing.unipi.it 
+- impostare le macrosezioni della tesi: introduction, background, state of the art 
+- riguardo allo state dell'arte: fare uno studio sui vari problemi di segmentazione (NB sui problemi di segmentazione, non sulle tecniche): 1. semantic segmentation, 2. instance segmentation, 3. panoptic segmenatation. 
+- valutare di fare la segmentazione per classi (questa cosa la facciamo dopo che hai eseguito più modelli sul dataset e abbiamo calcolato le performance)
+- parametrizzare la scelta del modello, altrimenti ogni volta tocca mettere mano al codice e modificarlo manualmente. 
+- implementare una versione di UNET
+
+
+NB. tutte le modifiche che fai sul codice, non farle sul branch `main`, ma su `develop` che ho appena creato, ogni volta che arriviamo ad una versione stabile, facciamo la merge sul main
