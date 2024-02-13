@@ -1,23 +1,35 @@
 
 model:
   num_classes: 1
+  sgm_type: hard
+  sgm_threshold: 0.5
 
 dataset:
   train: ./data/train.json
   val: ./data/val.json
   test: ./data/test.json
-  resize: 128
+  resize: 448
 
 train:
   save_path: "./models/"
-  seed: -1
-  batch_size: 16
-  lr: 1e-5
+  seed: 42
+  batch_size: 64
+  lr: 5e-7
   accelerator: "gpu"
+  #accelerator: "cpu"
   devices: 1
-  max_epochs: 5
+  max_epochs: 1000
+  pretrained: True
 
 log:  
   path: "./logs/"
   wandb: False
-  tensorboard: False
+  tensorboard: True
+
+checkpoints:
+  root_path: "./logs/oral"
+  version: "last"
+  path: "./logs/oral/version_62/checkpoints/epoch=41-step=252.ckpt"
+
+metrics:
+  exclude_back: true
