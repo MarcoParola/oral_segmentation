@@ -40,18 +40,29 @@ class DeeplabSegmentationNet(pl.LightningModule):
 
     #la variabile batch è fornita automaticamente dal DataLoader
     def training_step(self, batch, batch_idx):
-        images, masks = batch
-        outputs = self.model(images)['out']
-        loss = self.criterion(outputs, masks)
-        self.log('train_loss', loss)
-
+        loss = self._common_step(batch, batch_idx, "train")
+        #images, masks = batch
+        #outputs = self.model(images)['out']
+        #loss = self.criterion(outputs, masks)
+        #self.log('train_loss', loss)
+        #compute_met = BinaryMetrics()
+        #met = compute_met(masks, outputs)
+        #self.log('train_acc', met[0])
+        #self.log('train_jaccard', met[1])
+        #self.log('train_dice', met[5])
         return loss
 
     def validation_step(self, batch, batch_idx):
-        images, masks = batch
-        outputs = self.model(images)['out']
-        loss = self.criterion(outputs, masks)
-        self.log('val_loss', loss)
+        loss = self._common_step(batch, batch_idx, "val")
+        #images, masks = batch
+        #outputs = self.model(images)['out']
+        #loss = self.criterion(outputs, masks)
+        #self.log('val_loss', loss)
+        #compute_met = BinaryMetrics()
+        #met = compute_met(masks, outputs)
+        #self.log('val_acc', met[0])
+        #self.log('val_jaccard', met[1])
+        #self.log('val_dice', met[5])
         return loss
 
     def test_step(self, batch, batch_idx):
@@ -75,4 +86,16 @@ class DeeplabSegmentationNet(pl.LightningModule):
         optimizer = torch.optim.Adam(self.parameters(), lr=self.lr)
         sch = torch.optim.lr_scheduler.OneCycleLR(optimizer, max_lr = 0.01, epochs=self.epochs, steps_per_epoch = int(math.ceil(self.len_dataset / self.batch_size)))
         return [optimizer], [sch]
+
+    def _common_step(self, batch, batch_idx, stage):
+        img, actual_mask = batch
+        mask_predicted = self.model(img)['out']
+        loss = self.criterion(mask_predicted, actual_mask)
+        self.log(f"{stage}_loss", loss, on_step=True)
+        compute_met = BinaryMetrics()
+        met = compute_met(actual_mask, mask_predicted)
+        self.log(f"{stage}_acc", met[0])
+        self.log(f"{stage}_jaccard", met[5])
+        self.log(f"{stage}_dice", met[1])
+        return loss
          
