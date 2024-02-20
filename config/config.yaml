@@ -1,5 +1,6 @@
 
 model:
+  model_type: fcn
   num_classes: 1
   sgm_type: hard
   sgm_threshold: 0.5
@@ -14,6 +15,7 @@ train:
   save_path: "./models/"
   seed: 42
   batch_size: 64
+  batch_size_unet: 32
   lr: 5e-7
   accelerator: "gpu"
   #accelerator: "cpu"
@@ -21,10 +23,13 @@ train:
   max_epochs: 1000
   pretrained: True
 
+test:
+  save_output_path: "photo_output"
+
 log:  
   path: "./logs/"
   wandb: False
-  tensorboard: True
+  tensorboard: False
 
 checkpoints:
   root_path: "./logs/oral"
