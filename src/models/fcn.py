@@ -10,10 +10,10 @@ from ..metricsHardSegmentation import BinaryMetrics
 
 class FcnSegmentationNet(LightningModule):
     def __init__(self, num_classes, lr=5e-7, epochs=1000, len_dataset=0, batch_size=0, loss=nn.BCEWithLogitsLoss(), sgm_type="hard", sgm_threshold=0.5):
-        super(FcnSegmentationNet, self).__init__()
-        self.pretrained_model = models.segmentation.fcn_resnet50(pretrained=True)
-        #sostituendo il quinto strato del classificatore del modello preaddestrato con un nuovo strato di convoluzione 
-        #che trasformerà le 512 feature maps in un numero di canali uguale a num_classes.
+        super(FcnSegmentationNet, self).__init__() # call parent's constructor function to inherit its methods
+        self.pretrained_model = models.segmentation.fcn_resnet50(pretrained=True) # use a pretrained network
+        #replacing the fifth classifier layer of the pre-trained model with a new convolution layer
+        #which will transform the 512 feature maps into a number of channels equal to num_classes.
         self.pretrained_model.classifier[4] = nn.Conv2d(512, num_classes, kernel_size=(1, 1), stride=(1, 1))
         self.lr = lr
         self.loss = loss
@@ -23,19 +23,35 @@ class FcnSegmentationNet(LightningModule):
         self.len_dataset= len_dataset
         self.batch_size = batch_size
 
+    # operations performed on the input data to produce the model's output.
     def forward(self, x):
         out = self.pretrained_model(x)['out']
         out = (out > self.sgm_threshold).float()
         return out
 
     def predict_step(self, batch, batch_idx):
-        return self(batch[0])
+        return self(batch[0]) #invokes the 'forward' method of the class
 
+    #specifies what should happen in a single training step, 
+    #i.e. how input (batch) data is used to calculate loss and metrics during network training.
     def training_step(self, batch, batch_idx):
-        return self._common_step(batch, batch_idx, "train")
+        loss = self._common_step(batch, batch_idx, "train")
+        #compute_met = BinaryMetrics()
+        #met = compute_met(masks, outputs)
+        #self.log('train_acc', met[0])
+        #self.log('train_jaccard', met[5])
+        #self.log('train_dice', met[1])
+        return loss
+
 
     def validation_step(self, batch, batch_idx):
-        self._common_step(batch, batch_idx, "val") 
+        loss = self._common_step(batch, batch_idx, "val")
+        #compute_met = BinaryMetrics()
+        #met = compute_met(masks, outputs)
+        #self.log('val_acc', met[0])
+        #self.log('val_jaccard', met[5])
+        #self.log('val_dice', met[1]) 
+        return loss
         
     def test_step(self, batch, batch_idx):
         #self._common_step(batch, batch_idx, "test")
@@ -66,4 +82,9 @@ class FcnSegmentationNet(LightningModule):
         mask_predicted = self.pretrained_model(img)['out']
         loss = self.loss(mask_predicted, actual_mask)
         self.log(f"{stage}_loss", loss, on_step=True)
+        compute_met = BinaryMetrics()
+        met = compute_met(actual_mask, mask_predicted)
+        self.log(f"{stage}_acc", met[0])
+        self.log(f"{stage}_jaccard", met[5])
+        self.log(f"{stage}_dice", met[1])
         return loss
