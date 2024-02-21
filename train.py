@@ -14,9 +14,9 @@ from sklearn.utils.multiclass import unique_labels
 from src.models.fcn import FcnSegmentationNet
 from src.models.deeplab import DeeplabSegmentationNet
 from src.models.unet import unetSegmentationNet
-from src.models.r2unet import r2unetSegmentationNet
-from src.models.attunet import attunetSegmentationNet
-from src.models.r2attunet import r2attunetSegmentationNet
+from src.models.unet import r2unetSegmentationNet
+from src.models.unet import attunetSegmentationNet
+from src.models.unet import r2attunetSegmentationNet
 
 from src.models.deeplabFE import ModelFE
 from src.dataset import OralSegmentationDataset
