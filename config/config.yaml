@@ -16,11 +16,13 @@ train:
   seed: 42
   batch_size: 64
   batch_size_unet: 32
+  batch_size_r2unet: 16
   lr: 5e-7
   accelerator: "gpu"
   #accelerator: "cpu"
   devices: 1
-  max_epochs: 1000
+  #max_epochs: 1000
+  max_epochs: 5
   pretrained: True
 
 test:

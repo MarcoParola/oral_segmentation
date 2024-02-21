@@ -7,13 +7,13 @@ from torchvision import models
 from pytorch_lightning import LightningModule
 
 from ..metricsHardSegmentation import BinaryMetrics
-from .unet_modules import U_Net
+from .unet_modules import AttU_Net
 
-class unetSegmentationNet(LightningModule):
+class attunetSegmentationNet(LightningModule):
     # in_ch (input channels): Questo parametro indica il numero di canali delle immagini di input che la rete prevede di ricevere (3 nel caso di immagini a colori)
     def __init__(self, in_ch=3, num_classes=1, lr=5e-7, epochs=1000, len_dataset=0, batch_size=0, loss=nn.BCEWithLogitsLoss(), sgm_type="hard", sgm_threshold=0.5):
         super().__init__()
-        self.model = U_Net()
+        self.model = AttU_Net()
 
         self.lr = lr
         self.loss = loss

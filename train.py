@@ -14,6 +14,10 @@ from sklearn.utils.multiclass import unique_labels
 from src.models.fcn import FcnSegmentationNet
 from src.models.deeplab import DeeplabSegmentationNet
 from src.models.unet import unetSegmentationNet
+from src.models.r2unet import r2unetSegmentationNet
+from src.models.attunet import attunetSegmentationNet
+from src.models.r2attunet import r2attunetSegmentationNet
+
 from src.models.deeplabFE import ModelFE
 from src.dataset import OralSegmentationDataset
 from torch.utils.data import DataLoader
@@ -50,6 +54,8 @@ def main(cfg):
     bs = 0 
     if cfg.model.model_type == "unet":
         bs = cfg.train.batch_size_unet
+    elif cfg.model.model_type == "r2unet" or cfg.model.model_type == "attunet" or cfg.model.model_type == "r2attunet":
+        bs = cfg.train.batch_size_r2unet
     else:
         bs = cfg.train.batch_size
 
@@ -68,6 +74,18 @@ def main(cfg):
         print("Run Unet")
         print(bs)
         model = unetSegmentationNet(num_classes=cfg.model.num_classes, lr=cfg.train.lr, epochs=cfg.train.max_epochs, sgm_type = cfg.model.sgm_type, sgm_threshold=cfg.model.sgm_threshold, len_dataset = train_dataset.__len__(), batch_size = bs)
+    elif (cfg.model.model_type == "r2unet"):
+        print("Run R2Unet")
+        print(bs)
+        model = r2unetSegmentationNet(num_classes=cfg.model.num_classes, lr=cfg.train.lr, epochs=cfg.train.max_epochs, sgm_type = cfg.model.sgm_type, sgm_threshold=cfg.model.sgm_threshold, len_dataset = train_dataset.__len__(), batch_size = bs)
+    elif (cfg.model.model_type == "attunet"):
+        print("Run AttUnet")
+        print(bs)
+        model = attunetSegmentationNet(num_classes=cfg.model.num_classes, lr=cfg.train.lr, epochs=cfg.train.max_epochs, sgm_type = cfg.model.sgm_type, sgm_threshold=cfg.model.sgm_threshold, len_dataset = train_dataset.__len__(), batch_size = bs)
+    elif (cfg.model.model_type == "r2attunet"):
+        print("Run R2AttUnet")
+        print(bs)
+        model = r2attunetSegmentationNet(num_classes=cfg.model.num_classes, lr=cfg.train.lr, epochs=cfg.train.max_epochs, sgm_type = cfg.model.sgm_type, sgm_threshold=cfg.model.sgm_threshold, len_dataset = train_dataset.__len__(), batch_size = bs)
     else :
         print("The model type doesn't exist")
 
