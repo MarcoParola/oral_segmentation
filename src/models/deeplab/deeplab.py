@@ -8,7 +8,7 @@ from pytorch_lightning import LightningModule
 import pytorch_lightning as pl
 import torch.optim as optim
 
-from ..metricsHardSegmentation import BinaryMetrics
+from ...metricsHardSegmentation import BinaryMetrics
 
 class DeeplabSegmentationNet(pl.LightningModule):
     def __init__(self, num_classes, lr=5e-7, epochs=1000, len_dataset=0, batch_size=0, loss=nn.BCEWithLogitsLoss(), pretrained=True, sgm_type="hard", sgm_threshold=0.5):

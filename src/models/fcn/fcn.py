@@ -6,7 +6,7 @@ import math
 from torchvision import models
 from pytorch_lightning import LightningModule
 
-from ..metricsHardSegmentation import BinaryMetrics
+from ...metricsHardSegmentation import BinaryMetrics
 
 class FcnSegmentationNet(LightningModule):
     def __init__(self, num_classes, lr=5e-7, epochs=1000, len_dataset=0, batch_size=0, loss=nn.BCEWithLogitsLoss(), sgm_type="hard", sgm_threshold=0.5):

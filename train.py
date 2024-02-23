@@ -72,8 +72,9 @@ def main(cfg):
         model = DeeplabSegmentationNet(num_classes=cfg.model.num_classes, lr=cfg.train.lr, epochs=cfg.train.max_epochs, sgm_type = cfg.model.sgm_type, sgm_threshold=cfg.model.sgm_threshold, len_dataset = train_dataset.__len__(), batch_size = bs)
     elif (cfg.model.model_type == "unet"):
         print("Run Unet")
-        print(bs)
-        model = unetSegmentationNet(num_classes=cfg.model.num_classes, lr=cfg.train.lr, epochs=cfg.train.max_epochs, sgm_type = cfg.model.sgm_type, sgm_threshold=cfg.model.sgm_threshold, len_dataset = train_dataset.__len__(), batch_size = bs)
+        print("batch_size: " + str(bs))
+        print("lr: "+ str(cfg.train.lr_unet))
+        model = unetSegmentationNet(num_classes=cfg.model.num_classes, lr=cfg.train.lr_unet, epochs=cfg.train.max_epochs, sgm_type = cfg.model.sgm_type, sgm_threshold=cfg.model.sgm_threshold, len_dataset = train_dataset.__len__(), batch_size = bs)
     elif (cfg.model.model_type == "r2unet"):
         print("Run R2Unet")
         print(bs)

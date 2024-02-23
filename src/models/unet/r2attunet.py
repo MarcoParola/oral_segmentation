@@ -6,7 +6,7 @@ import math
 from torchvision import models
 from pytorch_lightning import LightningModule
 
-from ..metricsHardSegmentation import BinaryMetrics
+from ...metricsHardSegmentation import BinaryMetrics
 from .unet_modules import R2AttU_Net
 
 class r2attunetSegmentationNet(LightningModule):
