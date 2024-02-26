@@ -13,6 +13,9 @@ from sklearn.utils.multiclass import unique_labels
 
 from src.models.fcn import FcnSegmentationNet
 from src.models.deeplab import DeeplabSegmentationNet
+from src.models.unet import unetSegmentationNet
+
+
 from src.models.deeplabFE import ModelFE
 from src.dataset import OralSegmentationDataset
 from torch.utils.data import DataLoader
@@ -28,10 +31,7 @@ from src.utils import *
 def main(cfg):
 
     # to visualize log on tensorboard
-    #loggers = get_loggers(cfg)
-
-    # load a LightningModule
-    #checkpoint = torch.load(cfg.checkpoints.path, map_location=lambda storage, loc: storage)
+    loggers = get_loggers(cfg)
 
     if (cfg.checkpoints.version == "last"):
         folder_checkpoint = get_last_version(cfg.checkpoints.root_path)
@@ -46,15 +46,36 @@ def main(cfg):
         return None
 
     files = os.listdir(path_checkpoint)
-    checkpoint = torch.load(os.path.join(path_checkpoint, files[0]), map_location=lambda storage, loc: storage)
     print(os.path.join(path_checkpoint, files[0]))
+    check_path = os.path.join(path_checkpoint, files[0])
+    checkpoint = torch.load(check_path)
+    print(checkpoint["hyper_parameters"])
 
+    hyper_parameters = checkpoint["hyper_parameters"]
 
-    #model = FcnSegmentationNet.load_from_checkpoint(cfg.checkpoints.path, num_classes=cfg.model.num_classes)
-    model = DeeplabSegmentationNet.load_from_checkpoint(cfg.checkpoints.path, num_classes=cfg.model.num_classes)
-    
-    # TODO testare se funziona
-    #model.freeze()
+    # extract hyperparameters
+    model_type = hyper_parameters["model_type"]
+
+    if(model_type=="fcn"):
+        print("test su fcn")
+        model = FcnSegmentationNet.load_from_checkpoint(check_path, num_classes=cfg.model.num_classes)
+        print("Modello caricato")
+    elif (model_type=="deeplab"):
+        print("test su deeplab")
+        model = DeeplabSegmentationNet.load_from_checkpoint(check_path, num_classes=cfg.model.num_classes)
+        print("Modello caricato")
+    elif( model_type=="unet"):
+        encoder_name = hyper_parameters["encoder_name"]
+        if(encoder_name == "efficientnet-b7"):
+            print("test su unet_efficientnet-b7")
+            unetSegmentationNet.load_from_checkpoint(check_path, num_classes=cfg.model.num_classes, encoder_name="efficientnet-b7")
+            print("Modello caricato")
+        elif (encoder_name == "resnet50"):
+            print("test su unet_resnet50")
+            unetSegmentationNet.load_from_checkpoint(check_path, num_classes=cfg.model.num_classes, encoder_name="resnet50")
+            print("Modello caricato")
+    else:
+        print("Errore  tipo di rete non trattata nel test")
 
     # disable randomness, dropout, etc...
     model.eval()
@@ -80,7 +101,7 @@ def main(cfg):
     if cfg.model.sgm_type == "hard":
         outputs = (outputs > 0.5).float()
 
-    cartella_destinazione = "photo_output" # TODO metti su config
+    cartella_destinazione = cfg.test.save_output_path
 
     # Verifica se la cartella esiste
     if os.path.exists(cartella_destinazione):
@@ -98,7 +119,8 @@ def main(cfg):
         os.makedirs(cartella_destinazione)
         print(f"Cartella '{cartella_destinazione}' creata con successo.")
 
-    for i in range(test_set.__len__()):
+    #for i in range(test_set.__len__()):
+    for i in range(len(images)):
         image, mask = images[i], masks[i]
         fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(12, 4))
         ax1.imshow(image.squeeze().permute(1,2,0))
@@ -114,7 +136,6 @@ def main(cfg):
 
         # Chiudi la figura dopo aver salvato l'immagine
         plt.close(fig)
-
     
 
 if __name__ == "__main__":

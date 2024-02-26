@@ -1,6 +1,7 @@
 
 model:
   model_type: fcn
+  encoder_name: efficientnet-b7
   num_classes: 1
   sgm_type: hard
   sgm_threshold: 0.5
@@ -14,10 +15,11 @@ dataset:
 train:
   save_path: "./models/"
   seed: 42
-  batch_size: 64
-  batch_size_unet: 32
+  batch_size: 8
   batch_size_r2unet: 16
   lr: 5e-7
+  lr_unet: 1e-4
+  max_lr: 1e-3
   accelerator: "gpu"
   #accelerator: "cpu"
   devices: 1
@@ -36,7 +38,7 @@ log:
 checkpoints:
   root_path: "./logs/oral"
   version: "last"
-  path: "./logs/oral/version_62/checkpoints/epoch=41-step=252.ckpt"
+  #path: "./logs/oral/version_62/checkpoints/epoch=41-step=252.ckpt"
 
 metrics:
   exclude_back: true

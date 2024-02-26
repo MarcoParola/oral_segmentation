@@ -5,15 +5,23 @@ import torch.nn as nn
 import math
 from torchvision import models
 from pytorch_lightning import LightningModule
+from segmentation_models_pytorch import Unet
 
-from ..metricsHardSegmentation import BinaryMetrics
+from ...metricsHardSegmentation import BinaryMetrics
 from .unet_modules import U_Net
 
 class unetSegmentationNet(LightningModule):
     # in_ch (input channels): Questo parametro indica il numero di canali delle immagini di input che la rete prevede di ricevere (3 nel caso di immagini a colori)
-    def __init__(self, in_ch=3, num_classes=1, lr=5e-7, epochs=1000, len_dataset=0, batch_size=0, loss=nn.BCEWithLogitsLoss(), sgm_type="hard", sgm_threshold=0.5):
+    def __init__(self, in_channels=3, classes=1, lr=5e-7, epochs=1000, len_dataset=0, batch_size=0, loss=nn.BCEWithLogitsLoss(), sgm_type="hard", sgm_threshold=0.5, max_lr=1e-3, encoder_name="efficientnet-b7", encoder_weights="imagenet", model_type="unet"):
         super().__init__()
-        self.model = U_Net()
+        self.save_hyperparameters()
+        
+        self.model = Unet(
+            encoder_name=self.hparams.encoder_name,
+            encoder_weights=self.hparams.encoder_weights,
+            in_channels=self.hparams.in_channels,
+            classes=self.hparams.classes,
+        )
 
         self.lr = lr
         self.loss = loss
@@ -22,6 +30,7 @@ class unetSegmentationNet(LightningModule):
         self.epochs=epochs
         self.len_dataset= len_dataset
         self.batch_size = batch_size
+        self.max_lr = max_lr
 
     # operations performed on the input data to produce the model's output.
     def forward(self, x):
@@ -64,7 +73,7 @@ class unetSegmentationNet(LightningModule):
 
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.parameters(), lr=self.lr)
-        sch = torch.optim.lr_scheduler.OneCycleLR(optimizer, max_lr = 0.01, epochs=self.epochs, steps_per_epoch = int(math.ceil(self.len_dataset / self.batch_size)))
+        sch = torch.optim.lr_scheduler.OneCycleLR(optimizer, max_lr = self.max_lr, epochs=self.epochs, steps_per_epoch = int(math.ceil(self.len_dataset / self.batch_size)))
         return [optimizer], [sch]
         
 

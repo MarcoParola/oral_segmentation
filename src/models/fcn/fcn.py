@@ -9,8 +9,10 @@ from pytorch_lightning import LightningModule
 from ...metricsHardSegmentation import BinaryMetrics
 
 class FcnSegmentationNet(LightningModule):
-    def __init__(self, num_classes, lr=5e-7, epochs=1000, len_dataset=0, batch_size=0, loss=nn.BCEWithLogitsLoss(), sgm_type="hard", sgm_threshold=0.5):
+    def __init__(self, num_classes, lr=5e-7, epochs=1000, len_dataset=0, batch_size=0, loss=nn.BCEWithLogitsLoss(), sgm_type="hard", sgm_threshold=0.5, model_type="fcn"):
         super(FcnSegmentationNet, self).__init__() # call parent's constructor function to inherit its methods
+        self.save_hyperparameters()
+
         self.pretrained_model = models.segmentation.fcn_resnet50(pretrained=True) # use a pretrained network
         #replacing the fifth classifier layer of the pre-trained model with a new convolution layer
         #which will transform the 512 feature maps into a number of channels equal to num_classes.

@@ -53,7 +53,7 @@ def main(cfg):
 
     bs = 0 
     if cfg.model.model_type == "unet":
-        bs = cfg.train.batch_size_unet
+        bs = cfg.train.batch_size
     elif cfg.model.model_type == "r2unet" or cfg.model.model_type == "attunet" or cfg.model.model_type == "r2attunet":
         bs = cfg.train.batch_size_r2unet
     else:
@@ -66,15 +66,15 @@ def main(cfg):
     # model
     if (cfg.model.model_type == "fcn"):
         print("Run FCN")
-        model = FcnSegmentationNet(num_classes=cfg.model.num_classes, lr=cfg.train.lr, epochs=cfg.train.max_epochs, sgm_type = cfg.model.sgm_type, sgm_threshold=cfg.model.sgm_threshold, len_dataset = train_dataset.__len__(), batch_size = bs)
+        model = FcnSegmentationNet(num_classes=cfg.model.num_classes, lr=cfg.train.lr, epochs=cfg.train.max_epochs, sgm_type = cfg.model.sgm_type, sgm_threshold=cfg.model.sgm_threshold, len_dataset = train_dataset.__len__(), batch_size = bs, model_type="fcn")
     elif(cfg.model.model_type == "deeplab"):
         print("Run DeepLAb")
-        model = DeeplabSegmentationNet(num_classes=cfg.model.num_classes, lr=cfg.train.lr, epochs=cfg.train.max_epochs, sgm_type = cfg.model.sgm_type, sgm_threshold=cfg.model.sgm_threshold, len_dataset = train_dataset.__len__(), batch_size = bs)
+        model = DeeplabSegmentationNet(num_classes=cfg.model.num_classes, lr=cfg.train.lr, epochs=cfg.train.max_epochs, sgm_type = cfg.model.sgm_type, sgm_threshold=cfg.model.sgm_threshold, len_dataset = train_dataset.__len__(), batch_size = bs, model_type="deeplab")
     elif (cfg.model.model_type == "unet"):
         print("Run Unet")
         print("batch_size: " + str(bs))
         print("lr: "+ str(cfg.train.lr_unet))
-        model = unetSegmentationNet(num_classes=cfg.model.num_classes, lr=cfg.train.lr_unet, epochs=cfg.train.max_epochs, sgm_type = cfg.model.sgm_type, sgm_threshold=cfg.model.sgm_threshold, len_dataset = train_dataset.__len__(), batch_size = bs)
+        model = unetSegmentationNet(classes=cfg.model.num_classes, lr=cfg.train.lr_unet, epochs=cfg.train.max_epochs, sgm_type = cfg.model.sgm_type, sgm_threshold=cfg.model.sgm_threshold, len_dataset = train_dataset.__len__(), batch_size = bs, max_lr=cfg.train.max_lr, model_type="unet", encoder_name=cfg.model.encoder_name)
     elif (cfg.model.model_type == "r2unet"):
         print("Run R2Unet")
         print(bs)

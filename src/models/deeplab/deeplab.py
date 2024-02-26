@@ -11,7 +11,7 @@ import torch.optim as optim
 from ...metricsHardSegmentation import BinaryMetrics
 
 class DeeplabSegmentationNet(pl.LightningModule):
-    def __init__(self, num_classes, lr=5e-7, epochs=1000, len_dataset=0, batch_size=0, loss=nn.BCEWithLogitsLoss(), pretrained=True, sgm_type="hard", sgm_threshold=0.5):
+    def __init__(self, num_classes, lr=5e-7, epochs=1000, len_dataset=0, batch_size=0, loss=nn.BCEWithLogitsLoss(), pretrained=True, sgm_type="hard", sgm_threshold=0.5, model_type="deeplab"):
         super().__init__()
         self.save_hyperparameters()
         self.model = models.segmentation.deeplabv3_resnet50(pretrained=pretrained)
