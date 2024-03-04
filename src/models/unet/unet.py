@@ -6,13 +6,18 @@ import math
 from torchvision import models
 from pytorch_lightning import LightningModule
 from segmentation_models_pytorch import Unet
+import matplotlib.pyplot as plt
+from sklearn import metrics
+import csv
 
 from ...metricsHardSegmentation import BinaryMetrics
 from .unet_modules import U_Net
 
 class unetSegmentationNet(LightningModule):
     # in_ch (input channels): Questo parametro indica il numero di canali delle immagini di input che la rete prevede di ricevere (3 nel caso di immagini a colori)
-    def __init__(self, in_channels=3, classes=1, lr=5e-7, epochs=1000, len_dataset=0, batch_size=0, loss=nn.BCEWithLogitsLoss(), sgm_type="hard", sgm_threshold=0.5, max_lr=1e-3, encoder_name="efficientnet-b7", encoder_weights="imagenet", model_type="unet"):
+    def __init__(self, in_channels=3, classes=1, lr=5e-7, epochs=1000, len_dataset=0, batch_size=0, loss=nn.BCEWithLogitsLoss(), 
+                sgm_type="hard", sgm_threshold=0.5, max_lr=1e-3, encoder_name="efficientnet-b7", encoder_weights="imagenet", 
+                model_type="unet"):
         super().__init__()
         self.save_hyperparameters()
         
@@ -31,12 +36,20 @@ class unetSegmentationNet(LightningModule):
         self.len_dataset= len_dataset
         self.batch_size = batch_size
         self.max_lr = max_lr
+        self.predictions = []
+        self.targets = []
+        self.targets_tensor = []
+        self.predictions_tensor = []
 
     # operations performed on the input data to produce the model's output.
     def forward(self, x):
         out = self.model(x)        
-        #out = self.pretrained_model(x)['out']
-        out = (out > self.sgm_threshold).float()
+        out = torch.sigmoid(out)
+        return out
+
+    def predict_hard_mask(self, x, sgm_threshold=0.5):
+        out = self.model(x)
+        out = (out > sgm_threshold).float()
         return out
 
     def predict_step(self, batch, batch_idx):
@@ -56,12 +69,15 @@ class unetSegmentationNet(LightningModule):
     def test_step(self, batch, batch_idx):
         #self._common_step(batch, batch_idx, "test")
         images, masks = batch
-        outputs = self(images)
+        logits = self(images)
 
-        loss = self.loss(outputs, masks)
+        loss = self.loss(logits , masks)
         self.log('test_loss', loss)
+
+        logits_hard = self.predict_hard_mask(images, self.sgm_threshold)
+
         compute_met = BinaryMetrics()
-        met = compute_met(masks, outputs) # met is a list
+        met = compute_met(masks, logits_hard) # met is a list
         #return loss, met
         self.log_dict({'test_loss': loss, 'test_acc': met[0], 'test_dice': met[1], 'test_precision': met[2], 'test_specificity': met[3], 'test_recall': met[4], 'jaccard': met[5]})
         self.log('test_acc', met[0])
@@ -69,7 +85,8 @@ class unetSegmentationNet(LightningModule):
         self.log('test_precision', met[2])
         self.log('test_specificity', met[3])
         self.log('test_recall', met[4])
-        self.log('test_jaccard', met[5])
+        self.log('test_jaccard', met[5])  
+
 
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.parameters(), lr=self.lr)
@@ -82,8 +99,11 @@ class unetSegmentationNet(LightningModule):
         mask_predicted = self.model(img)
         loss = self.loss(mask_predicted, actual_mask)
         self.log(f"{stage}_loss", loss, on_step=True)
+
+        mask_predicted_hard = self.predict_hard_mask(img, self.sgm_threshold)
+
         compute_met = BinaryMetrics()
-        met = compute_met(actual_mask, mask_predicted)
+        met = compute_met(actual_mask, mask_predicted_hard)
         self.log(f"{stage}_acc", met[0])
         self.log(f"{stage}_jaccard", met[5])
         self.log(f"{stage}_dice", met[1])

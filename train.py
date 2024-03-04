@@ -48,8 +48,8 @@ def main(cfg):
     # datasets and dataloaders
     train_img_tranform, val_img_tranform, test_img_tranform, img_tranform = get_transformations(cfg)    # utils function
     train_dataset = OralSegmentationDataset(cfg.dataset.train, transform=img_tranform)
-    val_dataset = OralSegmentationDataset(cfg.dataset.val, transform=img_tranform)
-    test_dataset = OralSegmentationDataset(cfg.dataset.test, transform=img_tranform)
+    val_dataset = OralSegmentationDataset(cfg.dataset.val, transform=val_img_tranform)
+    test_dataset = OralSegmentationDataset(cfg.dataset.test, transform=test_img_tranform)
 
     bs = 0 
     if cfg.model.model_type == "unet":

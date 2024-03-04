@@ -41,28 +41,10 @@ class DeeplabSegmentationNet(pl.LightningModule):
     #la variabile batch è fornita automaticamente dal DataLoader
     def training_step(self, batch, batch_idx):
         loss = self._common_step(batch, batch_idx, "train")
-        #images, masks = batch
-        #outputs = self.model(images)['out']
-        #loss = self.criterion(outputs, masks)
-        #self.log('train_loss', loss)
-        #compute_met = BinaryMetrics()
-        #met = compute_met(masks, outputs)
-        #self.log('train_acc', met[0])
-        #self.log('train_jaccard', met[1])
-        #self.log('train_dice', met[5])
         return loss
 
     def validation_step(self, batch, batch_idx):
         loss = self._common_step(batch, batch_idx, "val")
-        #images, masks = batch
-        #outputs = self.model(images)['out']
-        #loss = self.criterion(outputs, masks)
-        #self.log('val_loss', loss)
-        #compute_met = BinaryMetrics()
-        #met = compute_met(masks, outputs)
-        #self.log('val_acc', met[0])
-        #self.log('val_jaccard', met[1])
-        #self.log('val_dice', met[5])
         return loss
 
     def test_step(self, batch, batch_idx):

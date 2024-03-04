@@ -34,9 +34,10 @@ def main(cfg):
     loggers = get_loggers(cfg)
 
     if (cfg.checkpoints.version == "last"):
-        folder_checkpoint = get_last_version(cfg.checkpoints.root_path)
+        folder_checkpoint, version_number = get_last_version(cfg.checkpoints.root_path)
     else:
         folder_checkpoint = "version_" + str(cfg.checkpoints.version)
+        version_number = cfg.checkpoints.version
     
     path_checkpoint = cfg.checkpoints.root_path + "/" + folder_checkpoint + "/checkpoints"
 
@@ -56,34 +57,19 @@ def main(cfg):
     # extract hyperparameters
     model_type = hyper_parameters["model_type"]
 
-    if(model_type=="fcn"):
-        print("test su fcn")
-        model = FcnSegmentationNet.load_from_checkpoint(check_path, num_classes=cfg.model.num_classes)
-        print("Modello caricato")
-    elif (model_type=="deeplab"):
-        print("test su deeplab")
-        model = DeeplabSegmentationNet.load_from_checkpoint(check_path, num_classes=cfg.model.num_classes)
-        print("Modello caricato")
-    elif( model_type=="unet"):
-        encoder_name = hyper_parameters["encoder_name"]
-        if(encoder_name == "efficientnet-b7"):
-            print("test su unet_efficientnet-b7")
-            unetSegmentationNet.load_from_checkpoint(check_path, num_classes=cfg.model.num_classes, encoder_name="efficientnet-b7")
-            print("Modello caricato")
-        elif (encoder_name == "resnet50"):
-            print("test su unet_resnet50")
-            unetSegmentationNet.load_from_checkpoint(check_path, num_classes=cfg.model.num_classes, encoder_name="resnet50")
-            print("Modello caricato")
-    else:
-        print("Errore  tipo di rete non trattata nel test")
+    model = get_model(hyper_parameters = hyper_parameters, model_type = model_type, check_path = check_path, sgm_threshold = cfg.model.sgm_threshold, num_classes=cfg.model.num_classes)
+    if(model == False):
+        return
 
     # disable randomness, dropout, etc...
     model.eval()
 
     # datasets and dataloaders
     train_img_tranform, val_img_tranform, test_img_tranform, img_tranform = get_transformations(cfg)
-    test_dataset = OralSegmentationDataset(cfg.dataset.test, transform=img_tranform)
-    test_loader = DataLoader(test_dataset, batch_size=cfg.train.batch_size, num_workers=11)
+    test_dataset = OralSegmentationDataset(cfg.dataset.test, transform=test_img_tranform)
+    #When set batch size to one, calculation will be performed per image. 
+    #We recommend setting batch size to one during inference as it provides accurate results on every image.
+    test_loader = DataLoader(test_dataset, batch_size=1, num_workers=11)
 
     # Evaluate the model on the test set
     trainer = pl.Trainer(
@@ -91,15 +77,6 @@ def main(cfg):
         accelerator=cfg.train.accelerator,
         devices=cfg.train.devices,)
     trainer.test(model, test_loader)
-
-    # plot some segmentation predictions in a plot containing three subfigure: image - actual - predicted
-    images, masks = next(iter(test_loader))
-    #images = images.to('cuda') # TODO fai test: sostituisci 'cuda' con 'gpu'
-    model = model.to('cpu')
-    outputs = model(images) # Call the forward function
-    print(cfg.model.sgm_type)
-    if cfg.model.sgm_type == "hard":
-        outputs = (outputs > 0.5).float()
 
     cartella_destinazione = cfg.test.save_output_path
 
@@ -119,24 +96,36 @@ def main(cfg):
         os.makedirs(cartella_destinazione)
         print(f"Cartella '{cartella_destinazione}' creata con successo.")
 
-    #for i in range(test_set.__len__()):
-    for i in range(len(images)):
-        image, mask = images[i], masks[i]
+    count_img = 0; 
+
+    for image, mask in test_loader:
+        # plot some segmentation predictions in a plot containing three subfigure: image - actual - predicted
+        #images, masks = next(iter(test_loader))
+        #images = images.to('cuda') # TODO fai test: sostituisci 'cuda' con 'gpu'
+        model = model.to('cpu')
+        output = model(image) # Call the forward function
+        #print(cfg.model.sgm_type)
+        if cfg.model.sgm_type == "hard":
+            output = (output > cfg.model.sgm_threshold).float()
+
         fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(12, 4))
         ax1.imshow(image.squeeze().permute(1,2,0))
         ax2.imshow(image.squeeze().permute(1,2,0), alpha=0.5)
         ax3.imshow(image.squeeze().permute(1,2,0), alpha=0.5)
-        ax2.imshow(mask.permute(1,2,0).numpy(), alpha=0.6, cmap='gray')
-        ax3.imshow(outputs[i].detach().permute(1,2,0).numpy(), alpha=0.6, cmap='gray')
-        print(outputs[i].shape, outputs[i].max(), outputs[i].min())
+        ax2.imshow(mask.squeeze(0).permute(1,2,0).numpy(), alpha=0.6, cmap='gray')
+        ax3.imshow(output.squeeze(0).detach().permute(1,2,0).numpy(), alpha=0.6, cmap='gray')
+        #print(outputs[i].shape, outputs[i].max(), outputs[i].min())
         #plt.show()
         # Salva la figura come immagine in un file
-        nome_file = os.path.join(cartella_destinazione, f"immagine_{i}.png")
+        nome_file = os.path.join(cartella_destinazione, f"immagine_{count_img}.png")
+        count_img = count_img + 1
         plt.savefig(nome_file)
 
         # Chiudi la figura dopo aver salvato l'immagine
         plt.close(fig)
-    
+        if count_img == 20:
+            break
+
 
 if __name__ == "__main__":
     main()

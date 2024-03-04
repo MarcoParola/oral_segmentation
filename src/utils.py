@@ -6,6 +6,10 @@ from pytorch_lightning.callbacks.early_stopping import EarlyStopping
 from sklearn.metrics import mean_squared_error
 from torch.utils.tensorboard import SummaryWriter
 
+from src.models.fcn import FcnSegmentationNet
+from src.models.deeplab import DeeplabSegmentationNet
+from src.models.unet import unetSegmentationNet
+
 
 def get_loggers(cfg):
     """Returns a list of loggers
@@ -37,7 +41,7 @@ def get_early_stopping(cfg):
     early_stopping_callback = EarlyStopping(
         monitor='val_loss',
         mode='min',
-        patience=15,
+        patience=30,
     )
     return early_stopping_callback
 
@@ -52,7 +56,7 @@ def get_transformations(cfg):
         torchvision.transforms.CenterCrop(cfg.dataset.resize),
         torchvision.transforms.ToTensor(),
     ])
-    val_img_tranform, test_img_tranform = None, None
+    val_img_tranform, test_img_tranform = img_tranform, img_tranform
 
     train_img_tranform = torchvision.transforms.Compose([
         torchvision.transforms.Resize(cfg.dataset.resize, antialias=True),
@@ -92,4 +96,31 @@ def get_last_version(path):
     folders = [f for f in folders if re.match(r'version_[0-9]+', f)]
     # get the last folder with the highest number
     last_folder = max(folders, key=lambda f: int(f.split('_')[1]))
-    return last_folder  
+    version_number = int(last_folder.split('_')[1])
+    return last_folder, version_number
+
+def get_model(hyper_parameters, model_type, check_path, sgm_threshold, num_classes):
+
+    if(model_type=="fcn"):
+        print("test su fcn")
+        model = FcnSegmentationNet.load_from_checkpoint(check_path, num_classes)
+        print("Modello caricato")
+    elif (model_type=="deeplab"):
+        print("test su deeplab")
+        model = DeeplabSegmentationNet.load_from_checkpoint(check_path, num_classes)
+        print("Modello caricato")
+    elif( model_type=="unet"):
+        encoder_name = hyper_parameters["encoder_name"]
+        if(encoder_name == "efficientnet-b7"):
+            print("test su unet_efficientnet-b7")
+            model = unetSegmentationNet.load_from_checkpoint(check_path, num_classes = num_classes, sgm_threshold = sgm_threshold, encoder_name="efficientnet-b7")
+            print("Modello caricato")
+        elif (encoder_name == "resnet50"):
+            print("test su unet_resnet50")
+            model = unetSegmentationNet.load_from_checkpoint(check_path, num_classes, encoder_name="resnet50")
+            print("Modello caricato")
+    else:
+        print("Errore  tipo di rete non trattata nel test")
+        model = False
+
+    return model

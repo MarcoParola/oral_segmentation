@@ -38,21 +38,11 @@ class FcnSegmentationNet(LightningModule):
     #i.e. how input (batch) data is used to calculate loss and metrics during network training.
     def training_step(self, batch, batch_idx):
         loss = self._common_step(batch, batch_idx, "train")
-        #compute_met = BinaryMetrics()
-        #met = compute_met(masks, outputs)
-        #self.log('train_acc', met[0])
-        #self.log('train_jaccard', met[5])
-        #self.log('train_dice', met[1])
         return loss
 
 
     def validation_step(self, batch, batch_idx):
         loss = self._common_step(batch, batch_idx, "val")
-        #compute_met = BinaryMetrics()
-        #met = compute_met(masks, outputs)
-        #self.log('val_acc', met[0])
-        #self.log('val_jaccard', met[5])
-        #self.log('val_dice', met[1]) 
         return loss
         
     def test_step(self, batch, batch_idx):
