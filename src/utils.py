@@ -103,11 +103,11 @@ def get_model(hyper_parameters, model_type, check_path, sgm_threshold, num_class
 
     if(model_type=="fcn"):
         print("test su fcn")
-        model = FcnSegmentationNet.load_from_checkpoint(check_path, num_classes)
+        model = FcnSegmentationNet.load_from_checkpoint(check_path, num_classes = num_classes, sgm_threshold = sgm_threshold)
         print("Modello caricato")
     elif (model_type=="deeplab"):
         print("test su deeplab")
-        model = DeeplabSegmentationNet.load_from_checkpoint(check_path, num_classes)
+        model = DeeplabSegmentationNet.load_from_checkpoint(check_path, num_classes = num_classes, sgm_threshold = sgm_threshold)
         print("Modello caricato")
     elif( model_type=="unet"):
         encoder_name = hyper_parameters["encoder_name"]
@@ -117,7 +117,7 @@ def get_model(hyper_parameters, model_type, check_path, sgm_threshold, num_class
             print("Modello caricato")
         elif (encoder_name == "resnet50"):
             print("test su unet_resnet50")
-            model = unetSegmentationNet.load_from_checkpoint(check_path, num_classes, encoder_name="resnet50")
+            model = unetSegmentationNet.load_from_checkpoint(check_path, num_classes = num_classes, sgm_threshold = sgm_threshold, encoder_name="resnet50")
             print("Modello caricato")
     else:
         print("Errore  tipo di rete non trattata nel test")

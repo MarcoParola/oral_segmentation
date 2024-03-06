@@ -105,6 +105,7 @@ venv.bak/
 
 # mkdocs documentation
 /site
+/DatiRoc
 
 # mypy
 .mypy_cache/

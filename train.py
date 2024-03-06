@@ -19,7 +19,9 @@ from src.models.unet import attunetSegmentationNet
 from src.models.unet import r2attunetSegmentationNet
 
 from src.models.deeplabFE import ModelFE
-from src.dataset import OralSegmentationDataset
+#from src.dataset import OralSegmentationDataset
+from src.datasets import BinarySegmentationDataset
+from src.datasets import MultiClassSegmentationDataset
 from torch.utils.data import DataLoader
 
 import torch
@@ -28,7 +30,6 @@ from torch.utils.data import DataLoader
 from torchvision import models
 
 from src.utils import *
-
 
 @hydra.main(version_base=None, config_path="./config", config_name="config")
 def main(cfg):
@@ -47,9 +48,15 @@ def main(cfg):
 
     # datasets and dataloaders
     train_img_tranform, val_img_tranform, test_img_tranform, img_tranform = get_transformations(cfg)    # utils function
-    train_dataset = OralSegmentationDataset(cfg.dataset.train, transform=img_tranform)
-    val_dataset = OralSegmentationDataset(cfg.dataset.val, transform=val_img_tranform)
-    test_dataset = OralSegmentationDataset(cfg.dataset.test, transform=test_img_tranform)
+
+    if cfg.model.num_classes == 1:
+        train_dataset = BinarySegmentationDataset(cfg.dataset.train, transform=img_tranform)
+        val_dataset = BinarySegmentationDataset(cfg.dataset.val, transform=val_img_tranform)
+        test_dataset = BinarySegmentationDataset(cfg.dataset.test, transform=test_img_tranform)
+    else:
+        train_dataset = MultiClassSegmentationDataset(cfg.dataset.train, transform=img_tranform)
+        val_dataset = MultiClassSegmentationDataset(cfg.dataset.val, transform=val_img_tranform)
+        test_dataset = MultiClassSegmentationDataset(cfg.dataset.test, transform=test_img_tranform)
 
     bs = 0 
     if cfg.model.model_type == "unet":
@@ -66,27 +73,18 @@ def main(cfg):
     # model
     if (cfg.model.model_type == "fcn"):
         print("Run FCN")
-        model = FcnSegmentationNet(num_classes=cfg.model.num_classes, lr=cfg.train.lr, epochs=cfg.train.max_epochs, sgm_type = cfg.model.sgm_type, sgm_threshold=cfg.model.sgm_threshold, len_dataset = train_dataset.__len__(), batch_size = bs, model_type="fcn")
+        print("classi: " + str(cfg.model.num_classes))
+        model = FcnSegmentationNet(classes=cfg.model.num_classes, lr=cfg.train.lr, epochs=cfg.train.max_epochs, sgm_type = cfg.model.sgm_type, sgm_threshold=cfg.model.sgm_threshold, len_dataset = train_dataset.__len__(), batch_size = bs, max_lr=cfg.train.max_lr, model_type="fcn")
     elif(cfg.model.model_type == "deeplab"):
         print("Run DeepLAb")
-        model = DeeplabSegmentationNet(num_classes=cfg.model.num_classes, lr=cfg.train.lr, epochs=cfg.train.max_epochs, sgm_type = cfg.model.sgm_type, sgm_threshold=cfg.model.sgm_threshold, len_dataset = train_dataset.__len__(), batch_size = bs, model_type="deeplab")
+        model = DeeplabSegmentationNet(classes=cfg.model.num_classes, lr=cfg.train.lr, epochs=cfg.train.max_epochs, sgm_type = cfg.model.sgm_type, sgm_threshold=cfg.model.sgm_threshold, len_dataset = train_dataset.__len__(), batch_size = bs, max_lr=cfg.train.max_lr, model_type="deeplab")
     elif (cfg.model.model_type == "unet"):
         print("Run Unet")
         print("batch_size: " + str(bs))
         print("lr: "+ str(cfg.train.lr_unet))
+        print("classi: " + str(cfg.model.num_classes))
+        print("encoder_name: " +str(cfg.model.encoder_name))
         model = unetSegmentationNet(classes=cfg.model.num_classes, lr=cfg.train.lr_unet, epochs=cfg.train.max_epochs, sgm_type = cfg.model.sgm_type, sgm_threshold=cfg.model.sgm_threshold, len_dataset = train_dataset.__len__(), batch_size = bs, max_lr=cfg.train.max_lr, model_type="unet", encoder_name=cfg.model.encoder_name)
-    elif (cfg.model.model_type == "r2unet"):
-        print("Run R2Unet")
-        print(bs)
-        model = r2unetSegmentationNet(num_classes=cfg.model.num_classes, lr=cfg.train.lr, epochs=cfg.train.max_epochs, sgm_type = cfg.model.sgm_type, sgm_threshold=cfg.model.sgm_threshold, len_dataset = train_dataset.__len__(), batch_size = bs)
-    elif (cfg.model.model_type == "attunet"):
-        print("Run AttUnet")
-        print(bs)
-        model = attunetSegmentationNet(num_classes=cfg.model.num_classes, lr=cfg.train.lr, epochs=cfg.train.max_epochs, sgm_type = cfg.model.sgm_type, sgm_threshold=cfg.model.sgm_threshold, len_dataset = train_dataset.__len__(), batch_size = bs)
-    elif (cfg.model.model_type == "r2attunet"):
-        print("Run R2AttUnet")
-        print(bs)
-        model = r2attunetSegmentationNet(num_classes=cfg.model.num_classes, lr=cfg.train.lr, epochs=cfg.train.max_epochs, sgm_type = cfg.model.sgm_type, sgm_threshold=cfg.model.sgm_threshold, len_dataset = train_dataset.__len__(), batch_size = bs)
     else :
         print("The model type doesn't exist")
 
