@@ -10,7 +10,7 @@ import hydra
 
 
 class MultiClassSegmentationDataset(torch.utils.data.Dataset):
-    def __init__(self, annonations, transform=None):
+    def __init__(self, annonations, transform=None, n_classes = 3):
         """
         Args:
             annonations (string): Path to the json annonations file with coco json file.
@@ -18,6 +18,7 @@ class MultiClassSegmentationDataset(torch.utils.data.Dataset):
         """
         self.annonations = annonations
         self.transform = transform
+        self.n_classes = n_classes
 
         with open(annonations, "r") as f:
             self.dataset = json.load(f)
@@ -58,8 +59,9 @@ class MultiClassSegmentationDataset(torch.utils.data.Dataset):
         # scale and repeat mask on all channels
         mask = mask / mask.max()
 
-        # Creare un tensore di zeri con dimensione 4 x H x W
-        tensor_masks = torch.zeros((4, mask.shape[1], mask.shape[2]), dtype=torch.float)
+        # Creare un tensore di zeri con dimensione (n_classes+1) x H x W
+        # (n_classes+1) perchè la prima classe è il tessuto sano
+        tensor_masks = torch.zeros((self.n_classes+1, mask.shape[1], mask.shape[2]), dtype=torch.float)
         tensor_masks[0] = 1 - mask
         tensor_masks[category_id] = mask
 
