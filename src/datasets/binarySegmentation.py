@@ -30,7 +30,13 @@ class BinarySegmentationDataset(torch.utils.data.Dataset):
         # retrieve image
         image_id = self.dataset["images"][idx]["id"]
         segments = [element["segmentation"] for element in self.dataset["annotations"] if element["image_id"] == image_id]
-        
+        category_id = None  # Inizializza la variabile a None
+
+        for element in self.dataset["annotations"]:
+            if element["image_id"] == image_id:
+                category_id = element["category_id"]
+                break
+
         lengths = [len(segment) for segment in segments[0]]
         segments = [segment for segment in segments[0] if len(segment) == max(lengths)]
         image_path = os.path.join(os.path.dirname(self.annonations), "oral1", self.dataset["images"][idx]["file_name"])
@@ -49,7 +55,7 @@ class BinarySegmentationDataset(torch.utils.data.Dataset):
         # scale and repeat mask on all channels
         mask = mask / mask.max()
         
-        return image, mask
+        return image, mask, category_id
         
 
 @hydra.main(version_base=None, config_path="../config", config_name="config")
