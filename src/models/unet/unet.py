@@ -21,12 +21,17 @@ class unetSegmentationNet(LightningModule):
                 model_type="unet"):
         super().__init__()
         self.save_hyperparameters()
+
+        if(classes>1):
+            out_channel = classes + 1
+        else:
+            out_channel = 1
         
         self.model = Unet(
             encoder_name=self.hparams.encoder_name,
             encoder_weights=self.hparams.encoder_weights,
             in_channels=self.hparams.in_channels,
-            classes=self.hparams.classes + 1, #a number of classes for output (output shape - (batch, classes, h, w))
+            classes=out_channel, #a number of classes for output (output shape - (batch, classes, h, w))
         )
 
         self.num_classes=classes
