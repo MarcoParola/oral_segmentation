@@ -31,6 +31,7 @@ class BinaryMetrics():
 
         return pixel_acc, dice, precision, specificity, recall, jaccard
 
+    '''
     def __call__(self, y_true, y_pred):
         # y_true: (N, H, W)
         # y_pred: (N, 1, H, W)
@@ -52,6 +53,51 @@ class BinaryMetrics():
                                                                                                     dtype=torch.float),
                                                                                           activated_pred)
         return [pixel_acc, dice, precision, specificity, recall, jaccard]
+    '''
+
+    def __call__(self, y_true, y_pred, lbl_true): #lbl_true = label atttuale
+        # y_true: (N, H, W)
+        # y_pred: (N, 1, H, W)
+        lbl_true = lbl_true.to("cpu")
+        if self.activation in [None, 'none']:
+            activation_fn = lambda x: x
+            activated_pred = activation_fn(y_pred)
+        elif self.activation == "sigmoid":
+            activation_fn = nn.Sigmoid()
+            activated_pred = activation_fn(y_pred)
+        elif self.activation == "0-1":
+            sigmoid_pred = nn.Sigmoid()(y_pred)
+            activated_pred = (sigmoid_pred > 0.5).float().to(y_pred.device)
+        else:
+            raise NotImplementedError("Not a supported activation!")
+
+        assert activated_pred.shape[1] == 1, 'Predictions must contain only one channel' \
+                                            ' when performing binary segmentation'
+        pixel_acc, dice, precision, specificity, recall, jaccard = self._calculate_overlap_metrics(y_true.to(y_pred.device,
+                                                                                                    dtype=torch.float),
+                                                                                        activated_pred)
+    
+        dict_metrics = {'pixel_acc': pixel_acc, 'dice': dice, 'precision': precision, 'specificity': specificity,
+                        'recall': recall, 'jaccard': jaccard}
+
+        # get unique labels
+        unique_lbls = np.unique(lbl_true)
+        # calculate metrics for each label
+        for lbl in unique_lbls:
+            mask = lbl_true == lbl
+            pixel_acc, dice, precision, specificity, recall, jaccard = self._calculate_overlap_metrics(y_true[mask],
+                                                                                                    activated_pred[mask])
+        
+            # append to dictionary
+            dict_metrics[f'pixel_acc_{lbl}'] = pixel_acc
+            dict_metrics[f'dice_{lbl}'] = dice
+            dict_metrics[f'precision_{lbl}'] = precision
+            dict_metrics[f'specificity_{lbl}'] = specificity
+            dict_metrics[f'recall_{lbl}'] = recall
+            dict_metrics[f'jaccard_{lbl}'] = jaccard
+
+        return dict_metrics
+
 
 '''
 Args:
@@ -83,8 +129,9 @@ Examples::
 '''
 
 
+
 class MultiClassMetrics(object):
-    def __init__(self, eps=1e-5, average=True, ignore_background=False, activation='0-1'):
+    def __init__(self, eps=1e-5, average=True, ignore_background=True, activation='0-1'):
         self.eps = eps
         self.average = average
         self.ignore = ignore_background
@@ -128,13 +175,13 @@ class MultiClassMetrics(object):
         # calculate metrics in multi-class segmentation
         matrix = self._get_class_data(gt, pred, class_num)
         if self.ignore:
-            matrix = matrix[:, 1:]
+            matrix = matrix[:, 1:] # permette di non cosiderare il background
 
         # tp = np.sum(matrix[0, :])
         # fp = np.sum(matrix[1, :])
         # fn = np.sum(matrix[2, :])
 
-        pixel_acc = (np.sum(matrix[0, :]) + self.eps) / (np.sum(matrix[0, :]) + np.sum(matrix[1, :]))
+        pixel_acc = (np.sum(matrix[0, :]) + self.eps) / (np.sum(matrix[0, :]) + np.sum(matrix[1, :]) + self.eps)
         dice = (2 * matrix[0] + self.eps) / (2 * matrix[0] + matrix[1] + matrix[2] + self.eps)
         precision = (matrix[0] + self.eps) / (matrix[0] + matrix[1] + self.eps)
         recall = (matrix[0] + self.eps) / (matrix[0] + matrix[2] + self.eps)
@@ -146,7 +193,8 @@ class MultiClassMetrics(object):
 
         return pixel_acc, dice, precision, recall
 
-    def __call__(self, y_true, y_pred):
+    def __call__(self, y_true, y_pred, lbl_true):
+        lbl_true = lbl_true.to("cpu")
         class_num = y_pred.size(1)
 
         if self.activation in [None, 'none']:
@@ -167,4 +215,21 @@ class MultiClassMetrics(object):
         #gt_onehot = self._one_hot(y_true, y_pred, class_num)
         gt_onehot = y_true
         pixel_acc, dice, precision, recall = self._calculate_multi_metrics(gt_onehot, activated_pred, class_num)
-        return [pixel_acc, dice, precision, recall]
+
+        dict_metrics = {'pixel_acc': pixel_acc, 'dice': dice, 'precision': precision,
+                        'recall': recall}
+
+        # get unique labels
+        unique_lbls = np.unique(lbl_true)
+        # calculate metrics for each label
+        for lbl in unique_lbls:
+            mask = lbl_true == lbl
+            pixel_acc, dice, precision, recall = self._calculate_multi_metrics(gt_onehot[mask], activated_pred[mask], class_num)
+        
+            # append to dictionary
+            dict_metrics[f'pixel_acc_{lbl}'] = pixel_acc
+            dict_metrics[f'dice_{lbl}'] = dice
+            dict_metrics[f'precision_{lbl}'] = precision
+            dict_metrics[f'recall_{lbl}'] = recall
+
+        return dict_metrics

@@ -65,23 +65,13 @@ class DeeplabSegmentationNet(pl.LightningModule):
         if self.num_classes == 1:
             compute_met = BinaryMetrics()
             met = compute_met(masks, logits_hard) # met is a list
-            #return loss, met
-            self.log_dict({'test_loss': loss, 'test_acc': met[0], 'test_dice': met[1], 'test_precision': met[2], 'test_specificity': met[3], 'test_recall': met[4], 'jaccard': met[5]})
-            self.log('test_acc', met[0])
-            self.log('test_dice', met[1])
-            self.log('test_precision', met[2])
-            self.log('test_specificity', met[3])
-            self.log('test_recall', met[4])
-            self.log('test_jaccard', met[5]) 
+            self.log_dict(met)
         else:
             compute_met = MultiClassMetrics()
             # masks.shape = logits_hard.shape = [1, 3, 448, 448]
             met = compute_met(masks, logits_hard)
             # met = pixel_acc, dice, precision, recall
-            self.log("test_acc", met[0])
-            self.log("test_precision", met[2])
-            self.log("test_recall", met[3])
-            self.log("test_dice", met[1])
+            self.log_dict(met)
 
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.parameters(), lr=self.lr)
@@ -100,14 +90,14 @@ class DeeplabSegmentationNet(pl.LightningModule):
             compute_met = BinaryMetrics()
             met = compute_met(actual_mask, mask_predicted_hard)
             # met = pixel_acc, dice, precision, specificity, recall, jaccard 
-            self.log(f"{stage}_acc", met[0])
-            self.log(f"{stage}_jaccard", met[5])
-            self.log(f"{stage}_dice", met[1])
+            self.log(f"{stage}_acc", met["pixel_acc"])
+            self.log(f"{stage}_jaccard", met["jaccard"])
+            self.log(f"{stage}_dice", met["dice"])
         else:
             compute_met = MultiClassMetrics()
             met = compute_met(actual_mask, mask_predicted_hard)
             # met = pixel_acc, dice, precision, recall
-            self.log(f"{stage}_acc", met[0])
-            self.log(f"{stage}_dice", met[1])
+            self.log(f"{stage}_acc", met["pixel_acc"])
+            self.log(f"{stage}_dice", met["dice"])
         return loss
          
