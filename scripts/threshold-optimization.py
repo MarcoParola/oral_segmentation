@@ -23,49 +23,6 @@ from torchvision import models
 
 from src.utils import *
 
-# targets e predictions sono liste contenenti tutte le maschere target (ground truth) e le maschere predette dal modello
-def ROC_with_scikit_learn(targets, predictions):
-
-    targets_tensor = torch.cat(targets, dim=0)
-    predictions_tensor = torch.cat(predictions, dim=0)
-
-    targets_tensor = torch.flatten(targets_tensor)
-    predictions_tensor = torch.flatten(predictions_tensor)
-
-    fpr, tpr, thresholds = metrics.roc_curve(targets_tensor.cpu().numpy(), predictions_tensor.cpu().numpy())
-    print(fpr.shape)
-    print(tpr.shape)
-    print(thresholds.shape, thresholds.max(), thresholds.min())
-    # Calcola AUC
-    roc_auc = metrics.auc(fpr, tpr)
-
-    # Apri il file CSV in modalità append. Se non esiste, verrà creato.
-    with open(f"DatiROC/dati_curva_ROC_{self.version}.csv", 'w', newline='\n') as file:
-        writer = csv.writer(file)
-        writer.writerow(fpr)
-        writer.writerow(tpr)
-        writer.writerow(thresholds)
-
-    # Plot della curva ROC
-    plt.figure()
-    plt.plot(fpr, tpr, color=thresholds, lw=3, label=f'ROC curve (area = {roc_auc:.2f})')
-    plt.plot([0, 1], [0, 1], color='navy', lw=2, linestyle='--')
-    plt.xlim([0.0, 1.0])
-    plt.ylim([0.0, 1.05])
-    plt.xlabel('False Positive Rate')
-    plt.ylabel('True Positive Rate')
-    plt.title('Receiver Operating Characteristic')
-    plt.legend(loc="lower right")
-    
-    # Salvare l'immagine
-    plt.savefig('photo_output/roc_curve.png', bbox_inches='tight')
-    plt.close()
-
-    # Reset delle liste per la prossima epoca
-    self.predictions = []
-    self.targets = []
-    print("ROC salvata")
-
 @hydra.main(version_base=None, config_path="../config", config_name="config")
 def main(cfg):
     if (cfg.checkpoints.version == "last"):
@@ -111,9 +68,9 @@ def main(cfg):
     test_loader = DataLoader(test_dataset, batch_size=1, num_workers=11)
 
     thresholds = np.arange(0, 1, 0.02)
-    fprs = []
-    tprs = []
-    dices = []
+
+    precisions = []
+    recalls = []
     
     for threshold in thresholds:
         print(threshold)
@@ -135,15 +92,14 @@ def main(cfg):
             fn += ((output == 0) & (mask == 1)).sum()
 
         print(f"tp: {tp}, tn: {tn}, fp: {fp}, fn: {fn}")
-        tpr = tp / (tp + fn)
-        fpr = fp / (fp + tn)
-        dice = (2 * tp) / (2 * tp + fp + fn)
-        fprs.append(fpr)
-        tprs.append(tpr)
-        dices.append(dice)
+        # compute precision and recall
+        precision = tp / (tp + fp)
+        recall = tp / (tp + fn)
+        precisions.append(precision)
+        recalls.append(recall)
 
     # compute Geometric Mean (G-Mean)
-    gmeans = np.sqrt(tprs * (1-fprs))
+    gmeans = np.sqrt(precision * (1-recall))
     ix = np.argmax(gmeans)
 
     # Plot della curva ROC
@@ -151,22 +107,23 @@ def main(cfg):
     plt.plot(fprs, tprs, color="red", lw=3)
     plt.plot([0, 1], [0, 1], color='navy', lw=2, linestyle='--')
     for i in range(len(thresholds)):
-        plt.scatter(fprs[i], tprs[i], color='red')
-        plt.text(fprs[i], tprs[i], thresholds[i])
+        plt.scatter(precisions[i], recalls[i], color='red')
     plt.xlim([0.0, 1.0])
     plt.ylim([0.0, 1.0])
-    plt.xlabel('False Positive Rate')
-    plt.ylabel('True Positive Rate')
+    plt.xlabel('Precision')
+    plt.ylabel('Recall')
     plt.title('Receiver Operating Characteristic')
     plt.legend(loc="lower right")
 
     # marker per il punto ottimale
-    plt.scatter(fprs[ix], tprs[ix], marker='o', color='black', label='Best')
+    plt.scatter(precisions[ix], recalls[ix], marker='o', color='black', label='Best')
+    plt.text(precisions[ix], recalls[ix], thresholds[ix])
     print(f"Best Threshold={thresholds[ix]}, G-Mean={gmeans[ix]}")
     # Salvare l'immagine
     plt.savefig(f"DatiROC/version_{version_number}/roc_curve.png", bbox_inches='tight')
     plt.close()
 
+    '''
     #plot di dice in base alla threshold
     plt.figure(figsize=(10, 6))
     plt.plot(thresholds, dices, marker='o', linestyle='-', color='b')
@@ -176,6 +133,7 @@ def main(cfg):
     plt.grid(True)
     plt.savefig(f"DatiROC/version_{version_number}/dice_threshold.png", bbox_inches='tight')
     plt.close()
+    '''
 
 
 
