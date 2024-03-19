@@ -13,7 +13,7 @@ from ...metricsHardSegmentation import *
 class DeeplabSegmentationNet(pl.LightningModule):
     def __init__(self, classes=1, lr=5e-7, epochs=1000, len_dataset=0, batch_size=0, loss=nn.BCEWithLogitsLoss(), pretrained=True, sgm_type="hard", sgm_threshold=0.5, max_lr=1e-3,  model_type="deeplab"):
         super().__init__()
-        self.save_hyperparameters()
+        self.save_hyperparameters(ignore=['loss'])
         self.model = models.segmentation.deeplabv3_resnet50(pretrained=pretrained)
         # Questa riga modifica l'ultimo strato del classificatore del modello DeepLabV3 per avere num_classes canali di uscita. 
         # Questo è necessario perché il modello preaddestrato avrà un numero diverso di canali nell'ultimo strato a seconda del dataset su cui è stato preaddestrato. 

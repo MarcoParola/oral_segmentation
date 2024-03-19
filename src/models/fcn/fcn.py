@@ -11,7 +11,7 @@ from ...metricsHardSegmentation import *
 class FcnSegmentationNet(LightningModule):
     def __init__(self, classes=1, lr=5e-7, epochs=1000, len_dataset=0, batch_size=0, loss=nn.BCEWithLogitsLoss(), sgm_type="hard", sgm_threshold=0.5, max_lr=1e-3, model_type="fcn"):
         super(FcnSegmentationNet, self).__init__() # call parent's constructor function to inherit its methods
-        self.save_hyperparameters()
+        self.save_hyperparameters(ignore=['loss'])
 
         self.model = models.segmentation.fcn_resnet50(pretrained=True) # use a pretrained network
         #replacing the fifth classifier layer of the pre-trained model with a new convolution layer
