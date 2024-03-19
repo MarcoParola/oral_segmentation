@@ -11,9 +11,8 @@ from src.models.fcn import FcnSegmentationNet
 from src.models.deeplab import DeeplabSegmentationNet
 from src.models.unet import unetSegmentationNet
 
-
-from src.models.deeplabFE import ModelFE
-from src.dataset import OralSegmentationDataset
+from src.datasets import BinarySegmentationDataset
+from src.datasets import MultiClassSegmentationDataset
 from torch.utils.data import DataLoader
 
 import torch
@@ -98,8 +97,10 @@ def main(cfg):
 
     # extract hyperparameters
     model_type = hyper_parameters["model_type"]
+    sgm_threshold = hyper_parameters["sgm_threshold"]
+    n_classes = hyper_parameters["classes"]
 
-    model = get_model(cfg, hyper_parameters, model_type, check_path, num_classes=cfg.model.num_classes)
+    model = get_model(hyper_parameters = hyper_parameters, model_type = model_type, check_path = check_path, sgm_threshold = sgm_threshold,num_classes=n_classes)
 
     if(model == False):
         return
@@ -107,12 +108,37 @@ def main(cfg):
     model.eval()
     model = model.to('cpu')
     train_img_tranform, val_img_tranform, test_img_tranform, img_tranform = get_transformations(cfg)
-    test_dataset = OralSegmentationDataset(cfg.dataset.test, transform=test_img_tranform)
-    test_loader = DataLoader(test_dataset, batch_size=1, num_workers=11)
+    test_dataset = BinarySegmentationDataset(cfg.dataset.test, transform=test_img_tranform)
+    test_loader = DataLoader(test_dataset, batch_size=1, num_workers=cfg.train.num_workers)
 
-    thresholds = np.arange(0, 1, 0.02)
-    fprs = []
-    tprs = []
+     # define an non-omonogeneous threshold list
+    # between 0 and 0.001 the threshold is 0.0002
+    # between 0.001 and 0.05 the threshold is 0.005
+    # between 0.05 and 0.2 the threshold is 0.02
+    # between 0.2 and 0.9 the threshold is 0.1
+    # between 0.9 and 0.99 the threshold is 0.01
+    # between 0.99 and 1 the threshold is 0.001
+    thresholds = np.concatenate(
+        [np.arange(0, 0.05, 0.01), 
+        np.arange(0.05, 0.12, 0.05), 
+        np.arange(0.12, 0.15, 0.02),
+        np.arange(0.15, 0.9, 0.06),
+        np.arange(0.9, 1.01, 0.01)]
+    )
+
+    # TODO vedere come vengono i grafici con questa configuraione
+    '''
+    thresholds = np.concatenate(
+        [np.arange(0.005, 0.05, 0.005), 
+        np.arange(0.05, 0.13, 0.01),
+        np.arange(0.13, 0.9, 0.07),
+        np.arange(0.9, 1, 0.01)]
+    )
+    '''
+    eps=1e-5
+
+    precisions = []
+    recalls = []
     dices = []
     
     for threshold in thresholds:
@@ -123,7 +149,7 @@ def main(cfg):
         fp = 0
         fn = 0
 
-        for i, (image, mask) in enumerate(test_loader):
+        for i, (image, mask, cat_id) in enumerate(test_loader):
             
             image = image.to('cpu')
             mask = mask.to('cpu')
@@ -135,41 +161,26 @@ def main(cfg):
             fn += ((output == 0) & (mask == 1)).sum()
 
         print(f"tp: {tp}, tn: {tn}, fp: {fp}, fn: {fn}")
-        tpr = tp / (tp + fn)
-        fpr = fp / (fp + tn)
-        dice = (2 * tp) / (2 * tp + fp + fn)
-        fprs.append(fpr)
-        tprs.append(tpr)
+        precision = (tp + eps) / (tp + fp + eps)
+        recall = (tp + eps) / (tp + fn + eps)
+        dice = 2 * tp / (2 * tp + fp + fn)
+        precisions.append(precision)
+        recalls.append(recall)
         dices.append(dice)
 
     # compute Geometric Mean (G-Mean)
-    gmeans = np.sqrt(tprs * (1-fprs))
-    ix = np.argmax(gmeans)
+    precisions = np.array(precisions)
+    recalls = np.array(recalls)
+    gmeans = np.sqrt(precisions * recalls)
+    ix_gmeans = np.argmax(gmeans)
+    ix_dice = np.argmax(dices)
 
-    # Plot della curva ROC
-    plt.figure()
-    plt.plot(fprs, tprs, color="red", lw=3)
-    plt.plot([0, 1], [0, 1], color='navy', lw=2, linestyle='--')
-    for i in range(len(thresholds)):
-        plt.scatter(fprs[i], tprs[i], color='red')
-        plt.text(fprs[i], tprs[i], thresholds[i])
-    plt.xlim([0.0, 1.0])
-    plt.ylim([0.0, 1.0])
-    plt.xlabel('False Positive Rate')
-    plt.ylabel('True Positive Rate')
-    plt.title('Receiver Operating Characteristic')
-    plt.legend(loc="lower right")
-
-    # marker per il punto ottimale
-    plt.scatter(fprs[ix], tprs[ix], marker='o', color='black', label='Best')
-    print(f"Best Threshold={thresholds[ix]}, G-Mean={gmeans[ix]}")
-    # Salvare l'immagine
-    plt.savefig(f"DatiROC/version_{version_number}/roc_curve.png", bbox_inches='tight')
-    plt.close()
 
     #plot di dice in base alla threshold
     plt.figure(figsize=(10, 6))
-    plt.plot(thresholds, dices, marker='o', linestyle='-', color='b')
+    plt.plot(thresholds, dices, label='Dice Curve')
+    plt.scatter(thresholds[ix_dice], dices[ix_dice], marker='o', color='black', label='Best')
+    plt.text(thresholds[ix_dice], dices[ix_dice], f"Best Threshold={thresholds[ix_dice]}")
     plt.title('Curva Dice Score vs Threshold')
     plt.xlabel('Threshold')
     plt.ylabel('Dice Score')
@@ -177,6 +188,27 @@ def main(cfg):
     plt.savefig(f"DatiROC/version_{version_number}/dice_threshold.png", bbox_inches='tight')
     plt.close()
 
+    print(f"Best Threshold={thresholds[ix_dice]}, Dice={dices[ix_dice]}")
+    
+    # Plot di precision e recall in base alla threshold
+    plt.figure()
+    plt.plot(precisions, recalls, color="red", lw=3, label='Precision-Recall Curve')
+    #for i in range(len(thresholds)):
+    #    plt.scatter(precisions[i], recalls[i], color='red')
+    plt.xlim([0.0, 1.0])
+    plt.ylim([0.0, 1.0])
+    plt.xlabel('Precision')
+    plt.ylabel('Recall')
+    plt.title('Receiver Operating Characteristic')
+    plt.legend(loc="lower right")
+
+    # marker per il punto ottimale
+    plt.scatter(precisions[ix_gmeans], recalls[ix_gmeans], marker='o', color='black', label='Best')
+    plt.text(precisions[ix_gmeans], recalls[ix_gmeans], thresholds[ix_gmeans])
+    print(f"Best Threshold={thresholds[ix_gmeans]}, G-Mean={gmeans[ix_gmeans]}")
+    # Salvare l'immagine
+    plt.savefig(f"DatiROC/version_{version_number}/roc_curve.png", bbox_inches='tight')
+    plt.close()
 
 
 if __name__ == "__main__":
