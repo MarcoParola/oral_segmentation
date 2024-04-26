@@ -1,6 +1,13 @@
 import numpy as np
+import os
 import torch
 import torch.nn as nn
+from sklearn.metrics import precision_score
+from sklearn.metrics import precision_recall_fscore_support
+from sklearn.metrics import jaccard_score
+from sklearn.metrics import accuracy_score
+from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
+import matplotlib.pyplot as plt
 
 class BinaryMetrics():
     r"""Calculate common metrics in binary cases.
@@ -30,30 +37,6 @@ class BinaryMetrics():
         jaccard = (tp + self.eps) / (fp + tp + fn + self.eps)
 
         return pixel_acc, dice, precision, specificity, recall, jaccard
-
-    '''
-    def __call__(self, y_true, y_pred):
-        # y_true: (N, H, W)
-        # y_pred: (N, 1, H, W)
-        if self.activation in [None, 'none']:
-            activation_fn = lambda x: x
-            activated_pred = activation_fn(y_pred)
-        elif self.activation == "sigmoid":
-            activation_fn = nn.Sigmoid()
-            activated_pred = activation_fn(y_pred)
-        elif self.activation == "0-1":
-            sigmoid_pred = nn.Sigmoid()(y_pred)
-            activated_pred = (sigmoid_pred > 0.5).float().to(y_pred.device)
-        else:
-            raise NotImplementedError("Not a supported activation!")
-
-        assert activated_pred.shape[1] == 1, 'Predictions must contain only one channel' \
-                                             ' when performing binary segmentation'
-        pixel_acc, dice, precision, specificity, recall, jaccard= self._calculate_overlap_metrics(y_true.to(y_pred.device,
-                                                                                                    dtype=torch.float),
-                                                                                          activated_pred)
-        return [pixel_acc, dice, precision, specificity, recall, jaccard]
-    '''
 
     def __call__(self, y_true, y_pred, lbl_true): #lbl_true = label atttuale
         # y_true: (N, H, W)
@@ -128,14 +111,11 @@ Examples::
     >>> pixel_accuracy, dice, precision, recall = metric_calculator(y_true, y_pred)
 '''
 
-
-
 class MultiClassMetrics(object):
-    def __init__(self, eps=1e-5, average=True, ignore_background=True, activation='0-1'):
+    def __init__(self, eps=1e-5, average=True, ignore_background=True):
         self.eps = eps
         self.average = average
         self.ignore = ignore_background
-        self.activation = activation
 
     @staticmethod
     def _one_hot(gt, pred, class_num):
@@ -152,7 +132,6 @@ class MultiClassMetrics(object):
         # perform calculation on a batch
         # for precise result in a single image, plz set batch size to 1
         matrix = np.zeros((3, class_num))
-
         # calculate tp, fp, fn per class
         for i in range(class_num):
             # pred shape: (N, H, W)
@@ -176,12 +155,13 @@ class MultiClassMetrics(object):
         matrix = self._get_class_data(gt, pred, class_num)
         if self.ignore:
             matrix = matrix[:, 1:] # permette di non cosiderare il background
+            
 
         # tp = np.sum(matrix[0, :])
         # fp = np.sum(matrix[1, :])
         # fn = np.sum(matrix[2, :])
 
-        pixel_acc = (np.sum(matrix[0, :]) + self.eps) / (np.sum(matrix[0, :]) + np.sum(matrix[1, :]) + self.eps)
+        pixel_acc = (np.sum(matrix[0, :]) + self.eps ) / (np.sum(matrix[0, :]) + np.sum(matrix[1, :]) + self.eps)
         dice = (2 * matrix[0] + self.eps) / (2 * matrix[0] + matrix[1] + matrix[2] + self.eps)
         precision = (matrix[0] + self.eps) / (matrix[0] + matrix[1] + self.eps)
         recall = (matrix[0] + self.eps) / (matrix[0] + matrix[2] + self.eps)
@@ -197,20 +177,9 @@ class MultiClassMetrics(object):
         lbl_true = lbl_true.to("cpu")
         class_num = y_pred.size(1)
 
-        if self.activation in [None, 'none']:
-            activation_fn = lambda x: x
-            activated_pred = activation_fn(y_pred)
-        elif self.activation == "sigmoid":
-            activation_fn = nn.Sigmoid()
-            activated_pred = activation_fn(y_pred)
-        elif self.activation == "softmax":
-            activation_fn = nn.Softmax(dim=1)
-            activated_pred = activation_fn(y_pred)
-        elif self.activation == "0-1":
-            pred_argmax = torch.argmax(y_pred, dim=1)
-            activated_pred = self._one_hot(pred_argmax, y_pred, class_num)
-        else:
-            raise NotImplementedError("Not a supported activation!")
+        # Applicata activation 0-1
+        pred_argmax = torch.argmax(y_pred, dim=1)
+        activated_pred = self._one_hot(pred_argmax, y_pred, class_num)
 
         #gt_onehot = self._one_hot(y_true, y_pred, class_num)
         gt_onehot = y_true
@@ -219,17 +188,138 @@ class MultiClassMetrics(object):
         dict_metrics = {'pixel_acc': pixel_acc, 'dice': dice, 'precision': precision,
                         'recall': recall}
 
-        # get unique labels
-        unique_lbls = np.unique(lbl_true)
-        # calculate metrics for each label
-        for lbl in unique_lbls:
-            mask = lbl_true == lbl
-            pixel_acc, dice, precision, recall = self._calculate_multi_metrics(gt_onehot[mask], activated_pred[mask], class_num)
+        return dict_metrics
+
+class MultiClassMetrics_manual_v2(object):
+    def __init__(self, eps=1e-5, ignore_background=True):
+        self.eps = eps
+        self.ignore = ignore_background
+    
+    def __call__(self, y_true, y_pred, version_number):
+
+        idx_class0 = 0
+        idx_class1 = 1
+        idx_class2 = 2
+        idx_class3 = 3
+
+        precision, recall, f1_score, support = precision_recall_fscore_support(y_true,y_pred,average=None, labels=[0,1,2,3])
+        pixel_acc = accuracy_score(y_true,y_pred)
+
+        cartella_destinazione = f"confusion_matrix/version_{version_number}"
+        if os.path.exists(cartella_destinazione):
+            for root, dirs, files in os.walk(cartella_destinazione):
+                for file in files:
+                    file_path = os.path.join(root, file)
+                    os.remove(file_path)
+                for dir in dirs:
+                    dir_path = os.path.join(root, dir)
+                    os.rmdir(dir_path)
+            print(f"Cartella '{cartella_destinazione}' svuotata con successo.")
+        else:
+            os.makedirs(cartella_destinazione)
+            print(f"Cartella '{cartella_destinazione}' creata con successo.")
+
+        cm = confusion_matrix(y_true, y_pred, normalize='true')
+        disp = ConfusionMatrixDisplay(confusion_matrix=cm)
+        disp.plot()
+        plt.savefig(f"{cartella_destinazione}/confusion_matrix_multiclass.png")
+        cm = confusion_matrix(y_true, y_pred, normalize='pred')
+        disp = ConfusionMatrixDisplay(confusion_matrix=cm)
+        disp.plot()
+        plt.savefig(f"{cartella_destinazione}/confusion_matrix_multiclass_pred.png")
+
+
+        y_true = [float(y > 0) for y in y_true]
+        y_pred = [float(y > 0) for y in y_pred]
+        precision_bin, recall_bin, f1_score_bin, support_bin = precision_recall_fscore_support(y_true,y_pred)
+        cm = confusion_matrix(y_true, y_pred, normalize='true')
+        disp = ConfusionMatrixDisplay(confusion_matrix=cm)
+        disp.plot()
+        plt.savefig(f"{cartella_destinazione}/confusion_matrix_binary.png")
+        cm = confusion_matrix(y_true, y_pred, normalize='pred')
+        disp = ConfusionMatrixDisplay(confusion_matrix=cm)
+        disp.plot()
+        plt.savefig(f"{cartella_destinazione}/confusion_matrix_binary_pred.png")
+
+
+        weighted_precision = sum(precision * support) / sum(support)
+        weighted_recall = sum(recall * support) / sum(support)
+        weighted_fscore = sum(f1_score * support) / sum(support)
+
+        dict_metrics = {
+            'pixel_acc': pixel_acc,
+
+            'precision_weighted': weighted_precision, 
+            'precision_a': precision[idx_class0], 
+            'precision_b': precision[idx_class1], 
+            'precision_c': precision[idx_class2], 
+            'precision_d': precision[idx_class3],
+            'precision_binary_b':precision_bin[1],
+
+            'recall_weighted': weighted_recall, 
+            'recall_a': recall[idx_class0],
+            'recall_b': recall[idx_class1], 
+            'recall_c': recall[idx_class2], 
+            'recall_d': recall[idx_class3],
+            'recall_binary_b':recall_bin[1],
+
+            'F_score_weighted': weighted_fscore,
+            'F_score_a': f1_score[idx_class0],
+            'F_score_b': f1_score[idx_class1], 
+            'F_score_c': f1_score[idx_class2], 
+            'F_score_d': f1_score[idx_class3],
+            'F_socre_binary_b':f1_score_bin[1]
+            }
+
+        return dict_metrics 
+
+class BinaryMetrics_manual(object):
+    def __init__(self, eps=1e-5, ignore_background=True):
+        self.eps = eps
+        self.ignore = ignore_background
+    
+    def __call__(self, y_true, y_pred, version_number):
+
+        pixel_acc = accuracy_score(y_true,y_pred)
+
+        # By setting zero_division=1, it is assumed that the precision for these classes is perfect (1.0), 
+        # whereas setting zero_division=0 assumes that it does not contribute to the score (0.0). 
+        # The choice of how to handle these situations depends on the specific context and the goals of your analysis.
+        precision, recall, f1_score, support = precision_recall_fscore_support(y_true,y_pred,average='binary', zero_division = 1)
+        precision_weighted, recall_weighted, f1_score_weighted, support_micro = precision_recall_fscore_support(y_true,y_pred, average='weighted', zero_division = 0)
         
-            # append to dictionary
-            dict_metrics[f'pixel_acc_{lbl}'] = pixel_acc
-            dict_metrics[f'dice_{lbl}'] = dice
-            dict_metrics[f'precision_{lbl}'] = precision
-            dict_metrics[f'recall_{lbl}'] = recall
+        cartella_destinazione = f"confusion_matrix/version_{version_number}"
+        if os.path.exists(cartella_destinazione):
+            for root, dirs, files in os.walk(cartella_destinazione):
+                for file in files:
+                    file_path = os.path.join(root, file)
+                    os.remove(file_path)
+                for dir in dirs:
+                    dir_path = os.path.join(root, dir)
+                    os.rmdir(dir_path)
+            print(f"Cartella '{cartella_destinazione}' svuotata con successo.")
+        else:
+            os.makedirs(cartella_destinazione)
+            print(f"Cartella '{cartella_destinazione}' creata con successo.")
+
+        cm = confusion_matrix(y_true, y_pred, normalize='true')
+        disp = ConfusionMatrixDisplay(confusion_matrix=cm)
+        disp.plot()
+        plt.savefig(f"confusion_matrix/version_{version_number}/confusion_matrix_true.png")
+
+        cm = confusion_matrix(y_true, y_pred, normalize='pred')
+        disp = ConfusionMatrixDisplay(confusion_matrix=cm)
+        disp.plot()
+        plt.savefig(f"confusion_matrix/version_{version_number}/confusion_matrix_pred.png")
+
+        dict_metrics = {
+            'Precision_binary': precision,
+            'Recall_binary': recall,
+            'F1_Score_binary': f1_score,
+            'Precision_weighted': precision_weighted,
+            'Recall_weighted': recall_weighted,
+            'F1_Score_weighted': f1_score_weighted,
+            'Pixel_accuracy': pixel_acc
+        }
 
         return dict_metrics

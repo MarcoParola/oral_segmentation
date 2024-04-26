@@ -138,3 +138,6 @@ photo_ensemble_intermedie/*
 gen_img/*
 elimina/*
 
+executeTest.sh
+executeTrain.sh
+
