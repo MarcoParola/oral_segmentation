@@ -1,6 +1,5 @@
 # Per eseguire soft segmentation: python test.py
-# Per eseguire segmentazione soft aggiungere: model.sgm_type=soft
-# Per decidere quale versione testare diversa dall'ultima: checkpoints.version= {numero}
+# Per decidere quale versione testare diversa dall'ultima: checkpoints.version={numero}
 
 import os
 import hydra
@@ -15,9 +14,6 @@ from src.models.fcn import FcnSegmentationNet
 from src.models.deeplab import DeeplabSegmentationNet
 from src.models.unet import unetSegmentationNet
 
-
-from src.models.deeplabFE import ModelFE
-#from src.dataset import OralSegmentationDataset
 from src.datasets import BinarySegmentationDataset
 from src.datasets import MultiClassSegmentationDataset
 from torch.utils.data import DataLoader
@@ -59,8 +55,9 @@ def main(cfg):
     # extract hyperparameters
     model_type = hyper_parameters["model_type"]
     classes = hyper_parameters["classes"]
+    print(f"num classi: {classes}")
 
-    model = get_model(hyper_parameters = hyper_parameters, model_type = model_type, check_path = check_path, sgm_threshold = cfg.model.sgm_threshold, num_classes=classes)
+    model = get_model(hyper_parameters = hyper_parameters, model_type = model_type, check_path = check_path, sgm_threshold = cfg.model.sgm_threshold, num_classes=classes, version_number=version_number)
     if(model == False):
         return
 
@@ -70,16 +67,16 @@ def main(cfg):
     # datasets and dataloaders
     train_img_tranform, val_img_tranform, test_img_tranform, img_tranform = get_transformations(cfg)
 
-    if cfg.model.num_classes == 1:
+    if classes == 1:
         test_dataset = BinarySegmentationDataset(cfg.dataset.test, transform=test_img_tranform)
     else:
-        test_dataset = MultiClassSegmentationDataset(cfg.dataset.test, transform=test_img_tranform)
+        test_dataset = MultiClassSegmentationDataset(cfg.dataset.test, transform=test_img_tranform, n_classes = classes - 1)
     #When set batch size to one, calculation will be performed per image. 
     #We recommend setting batch size to one during inference as it provides accurate results on every image.
     if model_type == "deeplab":
-        test_loader = DataLoader(test_dataset, batch_size=2, num_workers=11)
+        test_loader = DataLoader(test_dataset, batch_size=2, num_workers = cfg.train.num_workers)
     else:
-        test_loader = DataLoader(test_dataset, batch_size=1, num_workers=11)
+        test_loader = DataLoader(test_dataset, batch_size=1, num_workers = cfg.train.num_workers)
 
     # Evaluate the model on the test set
     trainer = pl.Trainer(
@@ -87,12 +84,11 @@ def main(cfg):
         accelerator=cfg.train.accelerator,
         devices=cfg.train.devices,)
     trainer.test(model, test_loader)
+    
+    cartella_destinazione = f"{cfg.test.save_output_path}/version_{version_number}"
 
-    cartella_destinazione = cfg.test.save_output_path
-
-    # Verifica se la cartella esiste
+    # Check if the folder exist 
     if os.path.exists(cartella_destinazione):
-        # Se la cartella esiste, svuotala
         for root, dirs, files in os.walk(cartella_destinazione):
             for file in files:
                 file_path = os.path.join(root, file)
@@ -102,32 +98,82 @@ def main(cfg):
                 os.rmdir(dir_path)
         print(f"Cartella '{cartella_destinazione}' svuotata con successo.")
     else:
-        # Se la cartella non esiste, creala
         os.makedirs(cartella_destinazione)
         print(f"Cartella '{cartella_destinazione}' creata con successo.")
 
-    count_img = 0; 
-
+    count_img = 0
+    
     for image, mask, cat_id in test_loader:
         # plot some segmentation predictions in a plot containing three subfigure: image - actual - predicted
-        #images, masks = next(iter(test_loader))
-        #images = images.to('cuda') # TODO fai test: sostituisci 'cuda' con 'gpu'
-        #print(image.shape)
         model = model.to('cpu')
         with torch.no_grad():
             output = model(image) # Call the forward function
 
-        if cfg.model.sgm_type == "hard":
+        if classes>1:
+            output = torch.nn.functional.softmax(output, dim = 1)
+            indices = torch.argmax(output, dim=1)
+            one_hot = torch.nn.functional.one_hot(indices, num_classes=4)
+            # one_hot shape [1, 488, 488, 4]
+            # Permute the dimensions to reshape it to [1, 4, 488, 488]
+            one_hot = one_hot.permute(0, 3, 1, 2)
+            output = one_hot
+        else:
+            output = torch.sigmoid(output)
+            out_net = output.clone()
             output = (output > cfg.model.sgm_threshold).float()
+            out_05 = (out_net > 0.5).float()
+            out_dif =(output != out_05)
         
+
         for i in range(image.size(0)):
-            if cfg.model.num_classes == 1:
+            if classes == 1:
+                
                 fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(12, 4))
                 ax1.imshow(image[i].squeeze().permute(1,2,0))
+                ax1.set_title("Image")
                 ax2.imshow(image[i].squeeze().permute(1,2,0), alpha=0.5)
                 ax3.imshow(image[i].squeeze().permute(1,2,0), alpha=0.5)
-                ax2.imshow(mask[i].squeeze(0).permute(1,2,0).numpy(), alpha=0.6, cmap='gray')
-                ax3.imshow(output[i].squeeze(0).detach().permute(1,2,0).numpy(), alpha=0.6, cmap='gray')
+                ax2.imshow(mask[i].squeeze(0).numpy(), alpha=0.6, cmap='gray')
+                ax2.set_title("Ground true")
+                ax3.imshow(output[i].squeeze(0).detach().numpy(), alpha=0.6, cmap='gray')
+                ax3.set_title("Predicted mask")
+
+                ax1.set_xticks([])
+                ax1.set_yticks([])
+                ax2.set_xticks([])
+                ax2.set_yticks([])
+                ax3.set_xticks([])
+                ax3.set_yticks([])
+                '''
+
+                fig, (ax1, ax2, ax3, ax4, ax5) = plt.subplots(1,5, figsize=(12, 4))
+                ax1.imshow(image[i].squeeze().permute(1,2,0))
+                ax1.set_title("Image")
+                ax2.imshow(image[i].squeeze().permute(1,2,0), alpha=0.5)
+                ax3.imshow(image[i].squeeze().permute(1,2,0), alpha=0.5)
+                ax4.imshow(image[i].squeeze().permute(1,2,0), alpha=0.5)
+                ax5.imshow(image[i].squeeze().permute(1,2,0), alpha=0.5)
+                ax2.imshow(mask[i].squeeze(0).numpy(), alpha=0.6, cmap='gray')
+                ax2.set_title("Ground true")
+                ax3.imshow(output[i].squeeze(0).detach().numpy(), alpha=0.6, cmap='gray')
+                ax3.set_title(f"Predicted mask th {cfg.model.sgm_threshold}")
+
+                ax4.imshow(out_05[i].squeeze(0).detach().numpy(), alpha=0.6, cmap='gray')
+                ax4.set_title("Predicted mask th 0.5")
+                ax5.imshow(out_dif[i].squeeze(0).detach().numpy(), alpha=0.6, cmap='gray')
+                ax5.set_title("difference mask")
+
+                ax1.set_xticks([])
+                ax1.set_yticks([])
+                ax2.set_xticks([])
+                ax2.set_yticks([])
+                ax3.set_xticks([])
+                ax3.set_yticks([])
+                ax4.set_xticks([])
+                ax4.set_yticks([])
+                ax5.set_xticks([])
+                ax5.set_yticks([])
+                '''
             else:
                 # output.shape = [1, 3, 448, 448]
                 fig, (ax1, ax2, ax3, ax4, ax5, ax6) = plt.subplots(1, 6, figsize=(12, 4))
@@ -149,17 +195,30 @@ def main(cfg):
                 ax6.imshow(output[i, 3, :, :].squeeze(0).detach().numpy(), alpha=0.6, cmap='gray')
                 ax6.set_title('Mask cat 3')
 
+                ax1.set_xticks([])
+                ax1.set_yticks([])
+                ax2.set_xticks([])
+                ax2.set_yticks([])
+                ax3.set_xticks([])
+                ax3.set_yticks([])
+                ax4.set_xticks([])
+                ax4.set_yticks([])
+                ax5.set_xticks([])
+                ax5.set_yticks([])
+                ax6.set_xticks([])
+                ax6.set_yticks([])
                 plt.suptitle(f"True category: {cat_id[i]}")
             
-            # Salva la figura come immagine in un file
+            # Save the figure into file
             nome_file = os.path.join(cartella_destinazione, f"immagine_{count_img}.png")
             count_img = count_img + 1
+
             plt.savefig(nome_file)
 
-            # Chiudi la figura dopo aver salvato l'immagine
             plt.close(fig)
-        if count_img == 40:
-            break
+        
+
+            
 
 
 if __name__ == "__main__":

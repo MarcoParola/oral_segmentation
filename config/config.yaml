@@ -15,17 +15,17 @@ dataset:
 train:
   save_path: "./models/"
   seed: 42
-  batch_size: 8
+  batch_size: 4
   batch_size_r2unet: 16
   lr: 5e-7
   lr_unet: 1e-4
   max_lr: 1e-3
   accelerator: "gpu"
-  #accelerator: "cpu"
   devices: 1
-  #max_epochs: 1000
-  max_epochs: 5
+  max_epochs: 1000
   pretrained: True
+  num_workers: 11
+  patience: 30
 
 test:
   save_output_path: "photo_output"
@@ -38,7 +38,19 @@ log:
 checkpoints:
   root_path: "./logs/oral"
   version: "last"
-  #path: "./logs/oral/version_62/checkpoints/epoch=41-step=252.ckpt"
 
 metrics:
   exclude_back: true
+
+ensemble:
+  check_fcn_bin: 157
+  check_dl_bin: 146
+  check_unet_eff_bin: 185
+  check_unet_res_bin: 192
+  check_fcn_mul: 258
+  check_dl_mul: 264
+  check_unet_eff_mul: 275
+  check_unet_res_mul: 285
+  dec_fus: "median"
+  type_aggr: "soft"
+  
