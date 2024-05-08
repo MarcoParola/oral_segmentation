@@ -1,7 +1,3 @@
-# Per eseguire segmentazione binaria: python train.py 
-# Per eseguire segmentazione multiclasse aggiungere: model.num_classes=3
-# per specificare modello aggiungere: model.model_type={nome} 
-
 import os
 import hydra
 import torch
@@ -15,7 +11,6 @@ import torch.nn as nn
 from src.models.fcn import FcnSegmentationNet
 from src.models.deeplab import DeeplabSegmentationNet
 from src.models.unet import unetSegmentationNet
-from src.models.ensemble import ensembleSegmentationNet
 
 from src.datasets import BinarySegmentationDataset
 from src.datasets import MultiClassSegmentationDataset
@@ -54,8 +49,6 @@ def main(cfg):
         val_dataset = MultiClassSegmentationDataset(cfg.dataset.val, transform=val_img_tranform, n_classes = cfg.model.num_classes)
         test_dataset = MultiClassSegmentationDataset(cfg.dataset.test, transform=test_img_tranform, n_classes = cfg.model.num_classes)
 
-    torch.set_float32_matmul_precision("highest")
-
     bs = cfg.train.batch_size
     if(cfg.model.num_classes>1):
         classes = cfg.model.num_classes + 1
@@ -72,19 +65,19 @@ def main(cfg):
     if (cfg.model.model_type == "fcn"):
         print("Run FCN")
         print("lr: "+ str(cfg.train.lr))
+        print("max_lr: "+ str(cfg.train.max_lr))
         print("classi: " + str(classes))
         model = FcnSegmentationNet(classes=classes, lr=cfg.train.lr, epochs=cfg.train.max_epochs, loss = loss_fun, sgm_type = cfg.model.sgm_type, sgm_threshold=cfg.model.sgm_threshold, len_dataset = train_dataset.__len__(), batch_size = bs, max_lr=cfg.train.max_lr, model_type="fcn")
     elif(cfg.model.model_type == "deeplab"):
         print("Run DeepLAb")
         print("lr: "+ str(cfg.train.lr))
         print("max_lr: "+ str(cfg.train.max_lr))
-        print("patience: "+ str(cfg.train.patience))
         print("classi: " + str(classes))
         model = DeeplabSegmentationNet(classes=classes, lr=cfg.train.lr, epochs=cfg.train.max_epochs, loss = loss_fun, sgm_type = cfg.model.sgm_type, sgm_threshold=cfg.model.sgm_threshold, len_dataset = train_dataset.__len__(), batch_size = bs, max_lr=cfg.train.max_lr, model_type="deeplab")
     elif (cfg.model.model_type == "unet"):
         print("Run Unet")
-        print("batch_size: " + str(bs))
         print("lr: "+ str(cfg.train.lr))
+        print("max_lr: "+ str(cfg.train.max_lr))
         print("classi: " + str(classes))
         print("encoder_name: " +str(cfg.model.encoder_name))
         model = unetSegmentationNet(classes=classes, lr=cfg.train.lr, epochs=cfg.train.max_epochs, 
@@ -105,6 +98,7 @@ def main(cfg):
         max_epochs=cfg.train.max_epochs,
     )
     trainer.fit(model, train_loader, val_loader)
+    
 
 if __name__ == "__main__":
     main()

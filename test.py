@@ -1,6 +1,3 @@
-# Per eseguire soft segmentation: python test.py
-# Per decidere quale versione testare diversa dall'ultima: checkpoints.version={numero}
-
 import os
 import hydra
 import torch
@@ -9,10 +6,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 import argparse
 from sklearn.utils.multiclass import unique_labels
-
-from src.models.fcn import FcnSegmentationNet
-from src.models.deeplab import DeeplabSegmentationNet
-from src.models.unet import unetSegmentationNet
 
 from src.datasets import BinarySegmentationDataset
 from src.datasets import MultiClassSegmentationDataset
@@ -48,7 +41,7 @@ def main(cfg):
     print(os.path.join(path_checkpoint, files[0]))
     check_path = os.path.join(path_checkpoint, files[0])
     checkpoint = torch.load(check_path)
-    print(checkpoint["hyper_parameters"])
+    print(checkpoint["hyper_parameters"]) 
 
     hyper_parameters = checkpoint["hyper_parameters"]
 
@@ -71,8 +64,6 @@ def main(cfg):
         test_dataset = BinarySegmentationDataset(cfg.dataset.test, transform=test_img_tranform)
     else:
         test_dataset = MultiClassSegmentationDataset(cfg.dataset.test, transform=test_img_tranform, n_classes = classes - 1)
-    #When set batch size to one, calculation will be performed per image. 
-    #We recommend setting batch size to one during inference as it provides accurate results on every image.
     if model_type == "deeplab":
         test_loader = DataLoader(test_dataset, batch_size=2, num_workers = cfg.train.num_workers)
     else:
@@ -96,10 +87,9 @@ def main(cfg):
             for dir in dirs:
                 dir_path = os.path.join(root, dir)
                 os.rmdir(dir_path)
-        print(f"Cartella '{cartella_destinazione}' svuotata con successo.")
     else:
         os.makedirs(cartella_destinazione)
-        print(f"Cartella '{cartella_destinazione}' creata con successo.")
+        print(f"Name folder: {cartella_destinazione}")
 
     count_img = 0
     
@@ -107,24 +97,19 @@ def main(cfg):
         # plot some segmentation predictions in a plot containing three subfigure: image - actual - predicted
         model = model.to('cpu')
         with torch.no_grad():
-            output = model(image) # Call the forward function
+            output = model(image)
 
         if classes>1:
             output = torch.nn.functional.softmax(output, dim = 1)
             indices = torch.argmax(output, dim=1)
             one_hot = torch.nn.functional.one_hot(indices, num_classes=4)
-            # one_hot shape [1, 488, 488, 4]
-            # Permute the dimensions to reshape it to [1, 4, 488, 488]
             one_hot = one_hot.permute(0, 3, 1, 2)
             output = one_hot
         else:
             output = torch.sigmoid(output)
             out_net = output.clone()
             output = (output > cfg.model.sgm_threshold).float()
-            out_05 = (out_net > 0.5).float()
-            out_dif =(output != out_05)
-        
-
+            
         for i in range(image.size(0)):
             if classes == 1:
                 
@@ -144,38 +129,8 @@ def main(cfg):
                 ax2.set_yticks([])
                 ax3.set_xticks([])
                 ax3.set_yticks([])
-                '''
-
-                fig, (ax1, ax2, ax3, ax4, ax5) = plt.subplots(1,5, figsize=(12, 4))
-                ax1.imshow(image[i].squeeze().permute(1,2,0))
-                ax1.set_title("Image")
-                ax2.imshow(image[i].squeeze().permute(1,2,0), alpha=0.5)
-                ax3.imshow(image[i].squeeze().permute(1,2,0), alpha=0.5)
-                ax4.imshow(image[i].squeeze().permute(1,2,0), alpha=0.5)
-                ax5.imshow(image[i].squeeze().permute(1,2,0), alpha=0.5)
-                ax2.imshow(mask[i].squeeze(0).numpy(), alpha=0.6, cmap='gray')
-                ax2.set_title("Ground true")
-                ax3.imshow(output[i].squeeze(0).detach().numpy(), alpha=0.6, cmap='gray')
-                ax3.set_title(f"Predicted mask th {cfg.model.sgm_threshold}")
-
-                ax4.imshow(out_05[i].squeeze(0).detach().numpy(), alpha=0.6, cmap='gray')
-                ax4.set_title("Predicted mask th 0.5")
-                ax5.imshow(out_dif[i].squeeze(0).detach().numpy(), alpha=0.6, cmap='gray')
-                ax5.set_title("difference mask")
-
-                ax1.set_xticks([])
-                ax1.set_yticks([])
-                ax2.set_xticks([])
-                ax2.set_yticks([])
-                ax3.set_xticks([])
-                ax3.set_yticks([])
-                ax4.set_xticks([])
-                ax4.set_yticks([])
-                ax5.set_xticks([])
-                ax5.set_yticks([])
-                '''
-            else:
-                # output.shape = [1, 3, 448, 448]
+                
+            else:            
                 fig, (ax1, ax2, ax3, ax4, ax5, ax6) = plt.subplots(1, 6, figsize=(12, 4))
                 ax1.imshow(image[i].squeeze().permute(1,2,0))
                 ax1.set_title('Image')

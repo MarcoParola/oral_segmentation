@@ -16,7 +16,6 @@ train:
   save_path: "./models/"
   seed: 42
   batch_size: 4
-  batch_size_r2unet: 16
   lr: 5e-7
   lr_unet: 1e-4
   max_lr: 1e-3
@@ -25,7 +24,7 @@ train:
   max_epochs: 1000
   pretrained: True
   num_workers: 11
-  patience: 30
+  patience: 10
 
 test:
   save_output_path: "photo_output"
@@ -51,6 +50,7 @@ ensemble:
   check_dl_mul: 264
   check_unet_eff_mul: 275
   check_unet_res_mul: 285
+
   dec_fus: "median"
   type_aggr: "soft"
   
