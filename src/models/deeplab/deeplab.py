@@ -34,7 +34,6 @@ class DeeplabSegmentationNet(pl.LightningModule):
         self.all_preds = []
         self.all_labels = []
 
-    #To run data through your model only. Called with output = model(input_data)
     def forward(self, x):
         out = self.model(x)['out']            
         return out
@@ -45,7 +44,6 @@ class DeeplabSegmentationNet(pl.LightningModule):
             out = torch.sigmoid(out)
             out = (out > sgm_threshold).float()
         else:
-            # out = [1, 4, 448, 448]
             out = torch.nn.functional.softmax(out, dim = 1)
             if (step == "test"):
                 max_elements, max_idxs = torch.max(out, dim=1)
@@ -79,7 +77,7 @@ class DeeplabSegmentationNet(pl.LightningModule):
             logits_hard = self.predict_hard_mask(images, step = "test")
             single_mask_pred_multiclass = torch.squeeze(logits_hard) 
             single_mask_true_multiclass =  torch.argmax(masks, dim=1)
-            single_mask_true_multiclass = single_mask_true_multiclass.squeeze(0) #[448,448]
+            single_mask_true_multiclass = single_mask_true_multiclass.squeeze(0) 
             
             prob = single_mask_pred_multiclass.cpu().detach().numpy().flatten()
             self.all_preds.extend(prob)
@@ -89,14 +87,12 @@ class DeeplabSegmentationNet(pl.LightningModule):
     
     def on_test_epoch_end(self):
         if self.num_classes > 1:
-            #print(len(self.all_labels)) = 17260544
-            #print(len(self.all_preds)) = 17260544
             compute_met = MultiClassMetrics_manual_v2()
             met = compute_met(self.all_labels, self.all_preds, self.version_number)
             self.log_dict(met)
         else:
             compute_met = BinaryMetrics_manual()
-            met = compute_met(self.all_labels, self.all_preds, self.version_number) # met is a dict
+            met = compute_met(self.all_labels, self.all_preds, self.version_number) 
             self.log_dict(met)
 
 
@@ -108,7 +104,12 @@ class DeeplabSegmentationNet(pl.LightningModule):
     def _common_step(self, batch, batch_idx, stage):
         img, actual_mask, cat_id = batch
         mask_predicted = self.model(img)['out']
-        loss = self.loss(mask_predicted, actual_mask)
+        if (self.num_classes>1):
+            # conversion from one-hot to classes 0,1,2,3
+            _, actual_mask_classes = actual_mask.max(dim=1) 
+            loss = self.loss(mask_predicted, actual_mask_classes)
+        else:
+            loss = self.loss(mask_predicted, actual_mask)
         self.log(f"{stage}_loss", loss, on_step=True)
 
         mask_predicted_hard = self.predict_hard_mask(img, self.sgm_threshold)
