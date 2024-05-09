@@ -59,15 +59,17 @@ Network name possibility are (default=fcn):
 - deeplab 
 - unet 
 ```
-Then add:
+To log metrics on tensorboard add (default=false):
 ```
-log.tensorboard=True # To log metrics on tensorboard (default=false)
+log.tensorboard=True 
 ```
+Only for unet, replace encoderName with efficientnet-b7 or resnet50 add (default=efficientnet-b7):
 ```
-model.encoder_name='encoderName' # Only for unet, replace encoderName with efficientnet-b7 or resnet50 (default=efficientnet-b7)
+model.encoder_name='encoderName' 
 ```
+For multiclass train add (default=1):
 ```
-model.num_classes=3 # For multiclass train (default=1)
+model.num_classes=3 
 ```
 
 
@@ -91,9 +93,8 @@ Multiclass train:
 - unet_res_mul
 ```
 
-Then add:
+To change the threshold in binary case add (default 0.5):
 ```
-# To change the threshold in binary case (default 0.5)
 model.sgm_threshold={number} 
 ```
 
@@ -103,16 +104,15 @@ This type of test is able to recover 4 different checkpoints.
 ```
 python testEnsemble.py
 ```
-Then add:
+To change results aggregation add (default dec_fus=median, type_aggr=soft, num_classes=1):
 ```
 ensemble.dec_fus={decisionFunction} ensemble.type_aggr={hard/soft} model.num_classes={1/3} 
-# default dec_fus=median, type_aggr=soft, num_classes=1
 ```
-To change the default checkpoints in binary case:
+To change the default checkpoints in binary case add:
 ```
 ensemble.check_fcn_bin={name/number} ensemble.check_dl_bin={name/number} ensemble.check_unet_eff_bin={name/number} ensemble.check_unet_res_bin={name/number}
 ```
-To change the default checkpoints in multiclass case:
+To change the default checkpoints in multiclass case add:
 ```
 ensemble.check_fcn_mul={name/number} ensemble.check_dl_mul={name/number} ensemble.check_unet_eff_mul={name/number} ensemble.check_unet_res_mul={name/number}
 ```
