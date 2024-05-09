@@ -51,25 +51,30 @@ python -m scripts.dataset-stats --dataset data\test.json # test set
 ### Train
 The train can be done using the implemented models (DeepLab, Fcn and Unet). To launch it use the following commands.
 ```
-python train.py model.model_type={networkName} # Replace {networkName} with: fcn or deeplab or unet 
+python train.py model.model_type={networkName}
+```
+Network name possibility are (default=fcn):
+```
+- fcn 
+- deeplab 
+- unet 
 ```
 Then add:
 ```
-log.tensorboard=True # To log metrics on tensorboard
+log.tensorboard=True # To log metrics on tensorboard (default=false)
 ```
 ```
-model.encoder_name='encoderName' # Only for unet, replace encoderName with efficientnet-b7 or resnet50
+model.encoder_name='encoderName' # Only for unet, replace encoderName with efficientnet-b7 or resnet50 (default=efficientnet-b7)
 ```
 ```
-model.num_classes=3 # For multiclass train
+model.num_classes=3 # For multiclass train (default=1)
 ```
-
 
 
 ### Test single network
 The test is able to recover any train version thanks to the saved checkpoints. The checkpoint have to be plased into the folder logs\oral.
 ```
-python test.py checkpoints.version={networkName} # Replace networkName with the interested network.
+python test.py checkpoints.version={networkName}
 ```
 Network name possibitily are: 
 ```
@@ -79,7 +84,7 @@ Binary train:
 - unet_eff_bin
 - unet_res_bin 
 
-Multiclass train
+Multiclass train:
 - fcn_mul
 - deeplab_mul
 - unet_eff_mul
@@ -88,8 +93,10 @@ Multiclass train
 
 Then add:
 ```
-model.sgm_threshold={number} # To change the threshold in binary case (default 0.5)
+# To change the threshold in binary case (default 0.5)
+model.sgm_threshold={number} 
 ```
+
 
 ### Test ensemble
 This type of test is able to recover 4 different checkpoints.
@@ -98,7 +105,8 @@ python testEnsemble.py
 ```
 Then add:
 ```
-ensemble.dec_fus={decisionFunction} ensemble.type_aggr={hard/soft} model.num_classes={1/3} # default dec_fus=median, type_aggr=soft, num_classes=1
+ensemble.dec_fus={decisionFunction} ensemble.type_aggr={hard/soft} model.num_classes={1/3} 
+# default dec_fus=median, type_aggr=soft, num_classes=1
 ```
 To change the default checkpoints in binary case:
 ```
@@ -120,6 +128,7 @@ Decision function possibility are:
 
 - weight # for weighted max only in multiclass case and ensemble.type_aggr=soft
 ```
+
 
 ### View logs and results on tensorboard
 
