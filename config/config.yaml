@@ -42,15 +42,16 @@ metrics:
   exclude_back: true
 
 ensemble:
-  check_fcn_bin: 157
-  check_dl_bin: 146
-  check_unet_eff_bin: 185
-  check_unet_res_bin: 192
-  check_fcn_mul: 258
-  check_dl_mul: 264
-  check_unet_eff_mul: 275
-  check_unet_res_mul: 285
+  check_fcn_bin: fcn_bin
+  check_dl_bin: deeplab_bin
+  check_unet_eff_bin: unet_eff_bin
+  check_unet_res_bin: unet_res_bin
+  check_fcn_mul: fcn_mul
+  check_dl_mul: deeplab_mul
+  check_unet_eff_mul: unet_eff_mul
+  check_unet_res_mul: unet_res_mul
 
   dec_fus: "median"
   type_aggr: "soft"
+
   

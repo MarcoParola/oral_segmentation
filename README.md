@@ -6,7 +6,7 @@
 This github repo is to publicly release the code of oral segmentation. Here is a quick guide on how to install and use the repo. More information in the [official documentation](doc/README.md).
 
 
-## Install
+## Install environment
 
 Create the virtualenv (you can also use conda) and install the dependencies of *requirements.txt*
 
@@ -16,12 +16,15 @@ env/Scripts/activate
 python -m pip install -r requirements.txt
 mkdir data
 ```
-
+<!-- 
 If you download more libs, freeze them in the requirement file:
 ```
 pyhton -m pip freeze > requirements.txt
 ```
-Then you can download the oral coco-dataset (both images and json file) from TODO-put-link. Copy them into `data` folder and unzip the file `oral1.zip`.
+-->
+
+## Download dataset
+Download the oral coco-dataset (both images and json file) from TODO-put-link. Copy them into `data` folder and unzip the file `oral1.zip`.
 
 ## Usage
 Regarding the usage of this repo, in order to reproduce the experiments, we organize the workflow in two part: (i) data preparation and (ii) deep learning experiments.
@@ -46,50 +49,81 @@ python -m scripts.dataset-stats --dataset data\test.json # test set
 
 
 ### Train
-Il train può essere fatto utilizzando entrambi i modelli implementati (DeepLab e Fcn). Per lanciarlo usare i seguenti comandi.
--train binario:
+The train can be done using the implemented models (DeepLab, Fcn and Unet). To launch it use the following commands.
 ```
-python train.py 
+python train.py model.model_type={networkName} # Replace {networkName} with: fcn or deeplab or unet 
 ```
--train multiclasse:
+Then add:
 ```
-python train.py model.num_classes=3 (Non ancora implementato)
+log.tensorboard=True # To log metrics on tensorboard
 ```
-
-### Test
-Il test è in grado di recuperare l'ultimo train eseguito o una qualsiasi versione precedente grazie ai checkpoint salvati.
-Per eseguire l'ultima versione:
 ```
-python test.py
+model.encoder_name='encoderName' # Only for unet, replace encoderName with efficientnet-b7 or resnet50
 ```
-Per eseguire una versione specifica:
 ```
-python test.py checkpoints.version= {numero}
-```
-Per salvare immagini soft:
-```
-python test.py model.sgm_type=soft
+model.num_classes=3 # For multiclass train
 ```
 
+
+
+### Test single network
+The test is able to recover any train version thanks to the saved checkpoints. The checkpoint have to be plased into the folder logs\oral.
+```
+python test.py checkpoints.version={networkName} # Replace networkName with the interested network.
+```
+Network name possibitily are: 
+```
+Binary train:
+- fcn_bin
+- deeplab_bin
+- unet_eff_bin
+- unet_res_bin 
+
+Multiclass train
+- fcn_mul
+- deeplab_mul
+- unet_eff_mul
+- unet_res_mul
+```
+
+Then add:
+```
+model.sgm_threshold={number} # To change the threshold in binary case (default 0.5)
+```
+
+### Test ensemble
+This type of test is able to recover 4 different checkpoints.
+```
+python testEnsemble.py
+```
+Then add:
+```
+ensemble.dec_fus={decisionFunction} ensemble.type_aggr={hard/soft} model.num_classes={1/3} # default dec_fus=median, type_aggr=soft, num_classes=1
+```
+To change the default checkpoints in binary case:
+```
+ensemble.check_fcn_bin={name/number} ensemble.check_dl_bin={name/number} ensemble.check_unet_eff_bin={name/number} ensemble.check_unet_res_bin={name/number}
+```
+To change the default checkpoints in multiclass case:
+```
+ensemble.check_fcn_mul={name/number} ensemble.check_dl_mul={name/number} ensemble.check_unet_eff_mul={name/number} ensemble.check_unet_res_mul={name/number}
+```
+Decision function possibility are:
+```
+- median
+- mean
+- max
+- min
+- product
+
+- mv # for majority voting only with ensemble.type_aggr=hard
+
+- weight # for weighted max only in multiclass case and ensemble.type_aggr=soft
+```
 
 ### View logs and results on tensorboard
 
-Per visualizzare i log di tensorboard avviare il server con il seguente comando e collegarsi a `localhost:6006`
+To view the tensorboard log start the server with the following command and connect to `localhost:6006`
 ```
 python -m tensorboard.main --logdir=logs
 ```
-Per ora sono visualizzabili solo i log del train e le metriche finali del test. Manca da testare il funzionamento del plot delle metriche durante il train.
-
-# TODO
-Mini lista guida delle prossime cose da fare, da prendere come linea guida e non come assolutismo; approfondisci tutti gli aspetti che trovi più interessanti. Dedica il tempo che meglio credi:
-
-Documento tesi:
-- crea un nuovo documento latex su [overleaf](https://it.overleaf.com) per la tesi e condividimelo marco.parola@ing.unipi.it 
-- impostare le macrosezioni della tesi: introduction, background, state of the art 
-- riguardo allo state dell'arte: fare uno studio sui vari problemi di segmentazione (NB sui problemi di segmentazione, non sulle tecniche): 1. semantic segmentation, 2. instance segmentation, 3. panoptic segmenatation. 
-- valutare di fare la segmentazione per classi (questa cosa la facciamo dopo che hai eseguito più modelli sul dataset e abbiamo calcolato le performance)
-- parametrizzare la scelta del modello, altrimenti ogni volta tocca mettere mano al codice e modificarlo manualmente. 
-- implementare una versione di UNET
-
-
-NB. tutte le modifiche che fai sul codice, non farle sul branch `main`, ma su `develop` che ho appena creato, ogni volta che arriviamo ad una versione stabile, facciamo la merge sul main
