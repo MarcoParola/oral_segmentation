@@ -77,6 +77,7 @@ def main(cfg):
     precisions = []
     recalls = []
     dices = []
+
     
     for threshold in thresholds:
         print(threshold)
@@ -108,7 +109,7 @@ def main(cfg):
             #tn += ((output == 0) & (mask == 0)).sum()
             fp += ((output == 1) & (mask == 0)).sum()
             fn += ((output == 0) & (mask == 1)).sum()
-
+            
         #print(f"tp: {tp}, tn: {tn}, fp: {fp}, fn: {fn}")
         precision = (tp + eps) / (tp + fp + eps)
         recall = (tp + eps) / (tp + fn + eps)
@@ -126,6 +127,8 @@ def main(cfg):
     ix_dice = np.argmax(dices)
 
 
+
+    '''
     #plot di dice in base alla threshold
     plt.figure(figsize=(10, 6))
     plt.plot(thresholds, dices, label='Dice Curve')
@@ -137,6 +140,7 @@ def main(cfg):
     plt.grid(True)
     plt.savefig(f"DatiROC/version_{version_number}/dice_threshold.png", bbox_inches='tight')
     plt.close()
+    '''
 
     print(f"Best Threshold={thresholds[ix_dice]}, Dice={dices[ix_dice]}")
     
