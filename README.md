@@ -3,25 +3,27 @@
 [![license](https://img.shields.io/github/license/MarcoParola/oral_segmentation?style=plastic)]()
 [![size](https://img.shields.io/github/languages/code-size/MarcoParola/oral_segmentation?style=plastic)]()
 
-This github repo is to publicly release the code of oral segmentation. Here is a quick guide on how to install and use the repo. More information in the [official documentation](doc/README.md).
+This GitHub repo is to publicly release the code of oral segmentation for oral cancer recognition. Here is a quick guide on how to install and use the repo. More information is in the [official documentation](doc/README.md).
 
+![example](https://github.com/MarcoParola/oral_segmentation/assets/32603898/8dc53d9c-6288-4b8e-a029-fa141c31ecc1)
 
-## Install environment
+## Install 
+
+To install the project, clone the repository and install dependencies:
+```sh
+git clone https://github.com/MarcoParola/oral_segmentation.git
+cd oral_segmentation
+```
 
 Create the virtualenv (you can also use conda) and install the dependencies of *requirements.txt*
 
-```
+```sh
 python -m venv env
 env/Scripts/activate
 python -m pip install -r requirements.txt
 mkdir data
 ```
-<!-- 
-If you download more libs, freeze them in the requirement file:
-```
-pyhton -m pip freeze > requirements.txt
-```
--->
+
 
 ## Download dataset
 Download the oral coco-dataset (both images and json file) from TODO-put-link. Copy them into `data` folder and unzip the file `oral1.zip`.
@@ -49,11 +51,11 @@ python -m scripts.dataset-stats --dataset data\test.json # test set
 
 
 ### Train
-The train can be done using the implemented models (DeepLab, Fcn and Unet). To launch it use the following commands.
+The training can be done using the implemented models (DeepLab, Fcn, and Unet). To launch it use the following commands.
 ```
 python train.py model.model_type={networkName}
 ```
-Network name possibility are (default=fcn):
+Network name options are (default=fcn):
 ```
 - fcn 
 - deeplab 
@@ -74,11 +76,15 @@ model.num_classes=3
 
 
 ### Test single network
-The test is able to recover any train version thanks to the saved checkpoints. The checkpoint have to be plased into the folder logs\oral.
+The test can recover any train version thanks to the saved checkpoints. The checkpoints have to be placed into `./logs/oral/`.
+
+Pretrained weights can be downloaded [here](https://drive.google.com/file/d/1jRZuxER9ESNEsWZJdqha3k57fhvPYwv7/view?usp=drive_link) both for testing and ensemble experiments. 
+Unzip and copy the checkpoint folders in `./logs/oral/`.
+
 ```
-python test.py checkpoints.version={networkName}
+python test.py checkpoints.version={version number/network_name}
 ```
-Network name possibitily are: 
+Network name options are: 
 ```
 Binary train:
 - fcn_bin
@@ -116,7 +122,7 @@ To change the default checkpoints in multiclass case add:
 ```
 ensemble.check_fcn_mul={name/number} ensemble.check_dl_mul={name/number} ensemble.check_unet_eff_mul={name/number} ensemble.check_unet_res_mul={name/number}
 ```
-Decision function possibility are:
+Decision function options are:
 ```
 - median
 - mean
