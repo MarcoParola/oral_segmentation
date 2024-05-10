@@ -44,40 +44,40 @@ def plot_distribution_perClass(json_data):
 
     
     plt.hist(id_area_cat1.values(), bins=100, color="blue", alpha=.3)
-    plt.title('Categoria 1: Istogramma delle quantità di bianco nelle maschere di segmentazione')
-    plt.xlabel('Quantità di "1" (pixel bianchi)')
-    plt.ylabel('Frequenza')
+    plt.title('Category ID 1: Histogram of White Area Proportions in Segmentation Masks')
+    plt.xlabel('Percentage')
+    plt.ylabel('Frequency')
     plt.show()
 
     plt.hist(id_area_cat2.values(), bins=100, color="orange", alpha=.3)
-    plt.title('Categoria 2: Istogramma delle quantità di bianco nelle maschere di segmentazione')
-    plt.xlabel('Quantità di "1" (pixel bianchi)')
-    plt.ylabel('Frequenza')
+    plt.title('Category ID 2: Histogram of White Area Proportions in Segmentation Masks')
+    plt.xlabel('Percentage')
+    plt.ylabel('Frequency')
     plt.show()
 
     plt.hist(id_area_cat3.values(), bins=100, color="green", alpha=.3)
-    plt.title('Categoria 3: Istogramma delle quantità di bianco nelle maschere di segmentazione')
-    plt.xlabel('Quantità di "1" (pixel bianchi)')
-    plt.ylabel('Frequenza')
+    plt.title('Category ID 3: Histogram of White Area Proportions in Segmentation Masks')
+    plt.xlabel('Percentage')
+    plt.ylabel('Frequency')
     plt.legend()
     plt.show()
     
     # Plot with all classes
 
     plt.hist(id_area_cat1.values(), bins=100, alpha=.3, label='Cat 1')
-    plt.xlabel('Quantità di "1" (pixel bianchi)')
-    plt.ylabel('Frequenza')
+    plt.xlabel('Percentage')
+    plt.ylabel('Frequency')
     #plt.show()
 
     plt.hist(id_area_cat2.values(), bins=100, alpha=.3, label='Cat 2')
-    plt.xlabel('Quantità di "1" (pixel bianchi)')
-    plt.ylabel('Frequenza')
+    plt.xlabel('Percentage')
+    plt.ylabel('Frequency')
     #plt.show()
 
     plt.hist(id_area_cat3.values(), bins=100, alpha=.3, label='Cat 3')
-    plt.title('Istogramma delle quantità di bianco nelle maschere di segmentazione per categoria')
-    plt.xlabel('Quantità di "1" (pixel bianchi)')
-    plt.ylabel('Frequenza')
+    plt.title('Histogram of White Area Proportions in Segmentation Masks per category')
+    plt.xlabel('Percentage')
+    plt.ylabel('Frequency')
     plt.legend()
     plt.show()
 
