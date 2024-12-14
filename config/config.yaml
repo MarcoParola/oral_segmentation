@@ -1,8 +1,33 @@
+
+model:
+  model_type: fcn
+  encoder_name: efficientnet-b7
+  num_classes: 1
+  sgm_type: hard
+  sgm_threshold: 0.5
+
 dataset:
   train: ./data/train.json
   val: ./data/val.json
   test: ./data/test.json
-  resize: 224
+  resize: 448
+
+train:
+  save_path: "./models/"
+  seed: 42
+  batch_size: 4
+  lr: 5e-7
+  lr_unet: 1e-4
+  max_lr: 1e-3
+  accelerator: "gpu"
+  devices: 1
+  max_epochs: 1000
+  pretrained: True
+  num_workers: 11
+  patience: 10
+
+test:
+  save_output_path: "photo_output"
 
 log:  
   path: "./logs/"
@@ -13,5 +38,20 @@ checkpoints:
   root_path: "./logs/oral"
   version: "last"
 
+metrics:
+  exclude_back: true
+
+ensemble:
+  check_fcn_bin: fcn_bin
+  check_dl_bin: deeplab_bin
+  check_unet_eff_bin: unet_eff_bin
+  check_unet_res_bin: unet_res_bin
+  check_fcn_mul: fcn_mul
+  check_dl_mul: deeplab_mul
+  check_unet_eff_mul: unet_eff_mul
+  check_unet_res_mul: unet_res_mul
+
+  dec_fus: "median"
+  type_aggr: "soft"
 
   

@@ -1,25 +1,21 @@
-## Creative Commons Attribution-NonCommercial 4.0 International (CC BY-NC 4.0) License
+MIT License
 
-This repository is licensed under the Creative Commons Attribution-NonCommercial 4.0 International (CC BY-NC 4.0) License. 
+Copyright (c) 2023 MarcoParola
 
-### Author:
-Marco Parola ([https://marcoparola.github.io/](https://marcoparola.github.io/))
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
 
-### Summary:
-Under this license, you are free to:
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
 
-- **Share**: Copy and redistribute the material in any medium or format.
-- **Adapt**: Remix, transform, and build upon the material.
-
-Under the following terms:
-
-1. **Attribution**: You must give appropriate credit, provide a link to the license, and indicate if changes were made. You may do so in any reasonable manner, but not in any way that suggests the licensor endorses you or your use.
-
-2. **Non-Commercial**: You may not use the material for commercial purposes.
-
-3. **No Additional Restrictions**: You may not apply legal terms or technological measures that legally restrict others from doing anything the license permits.
-
-### Disclaimer:
-The material is provided "as-is" without warranties or conditions of any kind, either express or implied, including but not limited to warranties of merchantability, fitness for a particular purpose, or noninfringement. The licensor is not liable for any damages arising out of or in connection with the use of the material.
-
-For more details, see the full license at: https://creativecommons.org/licenses/by-nc/4.0/
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
