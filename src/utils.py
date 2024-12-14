@@ -88,55 +88,6 @@ def log_metrics(actual, predicted, classes, log_dir):
     writer.close()
 
 
-
-def get_last_version(path):
-    """Return the last version of the folder in path
-    path: path to the folder containing the versions
-    """
-    folders = os.listdir(path)
-    folders = [f for f in folders if re.match(r'version_[0-9]+', f)]
-    last_folder = max(folders, key=lambda f: int(f.split('_')[1]))
-    version_number = int(last_folder.split('_')[1])
-    return last_folder, version_number
-
-def get_model(hyper_parameters, model_type, check_path, sgm_threshold, num_classes, version_number=0):
-    """Return the model loaded from the checkpoint
-    check_path: path to the folder containing the versions
-    """
-
-    if(model_type=="fcn"):
-        model = FcnSegmentationNet.load_from_checkpoint(check_path, num_classes = num_classes, sgm_threshold = sgm_threshold, version_number=version_number, strict=False)
-    elif (model_type=="deeplab"):
-        model = DeeplabSegmentationNet.load_from_checkpoint(check_path, num_classes = num_classes, sgm_threshold = sgm_threshold, version_number=version_number, strict=False)
-    elif( model_type=="unet"):
-        encoder_name = hyper_parameters["encoder_name"]
-        if(encoder_name == "efficientnet-b7"):
-            model = unetSegmentationNet.load_from_checkpoint(check_path, num_classes = num_classes, sgm_threshold = sgm_threshold, encoder_name="efficientnet-b7", version_number=version_number, strict=False)
-        elif (encoder_name == "resnet50"):
-            model = unetSegmentationNet.load_from_checkpoint(check_path, num_classes = num_classes, sgm_threshold = sgm_threshold, encoder_name="resnet50", version_number=version_number, strict=False)
-    else:
-        print("Network type error not covered in the test")
-        model = False
-
-    return model
-
-def find_path(root_path, version):
-    """Return the entire path relating to the indicated version
-    """
-    folder_checkpoint = "version_" + str(version)
-    path_checkpoint = root_path + "/" + folder_checkpoint + "/checkpoints"
-
-    # check if the forder exists 
-    if not os.path.exists(path_checkpoint):
-        print(f"Version {version} doesn't exist.")
-        return
-
-    files = os.listdir(path_checkpoint)
-    print(os.path.join(path_checkpoint, files[0]))
-    check_path = os.path.join(path_checkpoint, files[0])
-
-    return check_path
-
 def load_model_from_checkpoint(path, model_type):
     
     checkpoint = torch.load(path)
@@ -317,36 +268,5 @@ def plot_all_results(img, fcn, deeplab, unet_eff, unet_res, ensemble, dec_fun, c
 
             plt.close(fig)
         
-            
-def generate_colored_single_img(img1):
-    # given 1 image with four channels (one per class) generate a single 3 channel image with the colors
-    # where to each class is associated a color
-    # channel 1: black
-    # channel 2: yellow
-    # channel 3: green
-    # channel 4: blue
-    # each pixel has to assume the color of the class with the highest probability in the corresponding pixel
-    # and the intensity of the pixel has to be the probability of that class
-
-    #print(img1.shape) [2, 4, 448, 448]
-    img = torch.zeros((img1.size(0), 3, img1.size(2), img1.size(3)))
-
-    for i in range(img1.size(0)):
-        for j in range(img1.size(2)):
-            for k in range(img1.size(3)):
-                # get the class with the highest probability
-                max_prob = torch.max(img1[i, :, j, k])
-                max_prob_idx = torch.argmax(img1[i, :, j, k])
-
-                if max_prob_idx == 1:
-                    img[i, :, j, k] = torch.tensor([max_prob, 0, 0])
-                elif max_prob_idx == 2:
-                    img[i, :, j, k] = torch.tensor([0, max_prob, 0])
-                elif max_prob_idx == 3:
-                    img[i, :, j, k] = torch.tensor([0, 0, max_prob])
-    
-    #print(img.shape) [2, 3, 448, 448]
-    return img
-
 
 
