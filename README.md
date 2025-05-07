@@ -3,7 +3,7 @@
 [![license](https://img.shields.io/github/license/MarcoParola/oral_segmentation?style=plastic)]()
 [![size](https://img.shields.io/github/languages/code-size/MarcoParola/oral_segmentation?style=plastic)]()
 
-This GitHub repo is to publicly release the code of oral segmentation for oral cancer recognition. Here is a quick guide on how to install and use the repo. More information is in the [official documentation](doc/README.md).
+This GitHub repo is to publicly release the code of [Oral cancer recognition on photographic images via deep learning semantic segmentation (SSCI 2025)](). Here is a quick guide on how to install and use the repo. More information is in the [official documentation](doc/README.md).
 
 ![example](https://github.com/MarcoParola/oral_segmentation/assets/32603898/8dc53d9c-6288-4b8e-a029-fa141c31ecc1)
 
