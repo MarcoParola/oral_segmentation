@@ -3,9 +3,37 @@
 [![license](https://img.shields.io/github/license/MarcoParola/oral_segmentation?style=plastic)]()
 [![size](https://img.shields.io/github/languages/code-size/MarcoParola/oral_segmentation?style=plastic)]()
 
-This GitHub repo is to publicly release the code of [Oral cancer recognition on photographic images via deep learning semantic segmentation (SSCI 2025)](). Here is a quick guide on how to install and use the repo. More information is in the [official documentation](doc/README.md).
+This GitHub repo is to publicly release the code of [Oral cancer recognition on photographic images via deep learning semantic segmentation (SSCI 2025)](https://ieeexplore.ieee.org/document/11002690). Here is a quick guide on how to install and use the repo. More information is in the [official documentation](doc/README.md).
 
 ![example](https://github.com/MarcoParola/oral_segmentation/assets/32603898/8dc53d9c-6288-4b8e-a029-fa141c31ecc1)
+
+Please cite the following:
+```
+@INPROCEEDINGS{11002690,
+  author={Parola, Marco and Cimino, Mario G.C.A. and Cantini, Irene and Mantia, Gaetano La and Campisi, Giuseppina and Di Fede, Olga},
+  booktitle={2025 IEEE Symposium on Computational Intelligence in Health and Medicine Companion (CIHM Companion)}, 
+  title={Oral Cancer Recognition on Photographic Images Via Deep Learning Semantic Segmentation}, 
+  year={2025},
+  volume={},
+  number={},
+  pages={1-5},
+  keywords={Deep learning;Pathology;Image recognition;Semantic segmentation;Computational modeling;Computer architecture;Predictive models;Lesions;Medical diagnostic imaging;Cancer;Oral cancer;Oral squamous cell carcinoma;Unet;Healthcare screening;Ensemble learning;Semantic segmentation},
+  doi={10.1109/CIHMCompanion65205.2025.11002690}
+}
+
+@article{PAROLA2024102433,
+  title = {Towards explainable oral cancer recognition: Screening on imperfect images via Informed Deep Learning and Case-Based Reasoning},
+  journal = {Computerized Medical Imaging and Graphics},
+  volume = {117},
+  pages = {102433},
+  year = {2024},
+  issn = {0895-6111},
+  doi = {https://doi.org/10.1016/j.compmedimag.2024.102433},
+  url = {https://www.sciencedirect.com/science/article/pii/S0895611124001101},
+  author = {Marco Parola and Federico A. Galatolo and Gaetano {La Mantia} and Mario G.C.A. Cimino and Giuseppina Campisi and Olga {Di Fede}},
+  keywords = {Oral cancer, Oncology, Medical imaging, Case-based reasoning, Informed deep learning, Explainable artificial intelligence},
+}
+```
 
 ## Install 
 
