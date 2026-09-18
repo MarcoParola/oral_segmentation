@@ -121,12 +121,16 @@ dmypy.json
 # Cython debug symbols
 cython_debug/
 
-__init__.py
 checkpoints/
 data/
 logs/
 outputs/
+artifacts/
 lightning_logs/
+
+# Local dataset copies (images + COCO annotations) are never committed.
+archive/
+archive.zip
 
 photo_output/*
 all_photo_output/*

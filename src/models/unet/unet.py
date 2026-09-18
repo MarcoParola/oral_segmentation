@@ -11,12 +11,13 @@ from sklearn import metrics
 import csv
 
 from ...metricsHardSegmentation import *
+from ..training import segmentation_step
 
 
 class unetSegmentationNet(LightningModule):
     # in_ch (input channels): This parameter indicates the number of input image channels that the network expects to receive (3 in the case of color images)
-    def __init__(self, in_channels=3, classes=1, lr=5e-7, epochs=1000, len_dataset=0, batch_size=0, loss=nn.BCEWithLogitsLoss(), 
-                sgm_type="hard", sgm_threshold=0.5, max_lr=1e-3, encoder_name="efficientnet-b7", encoder_weights="imagenet", 
+    def __init__(self, in_channels=3, classes=1, lr=5e-7, epochs=1000, len_dataset=0, batch_size=0, loss=None,
+                sgm_type="hard", sgm_threshold=0.5, max_lr=1e-3, encoder_name="efficientnet-b7", encoder_weights=None,
                 model_type="unet", version_number = 0):
         super().__init__()
         self.save_hyperparameters(ignore=['loss'])
@@ -30,7 +31,7 @@ class unetSegmentationNet(LightningModule):
 
         self.num_classes=classes
         self.lr = lr
-        self.loss = loss
+        self.loss = loss if loss is not None else (nn.BCEWithLogitsLoss() if classes == 1 else nn.CrossEntropyLoss())
         self.sgm_type=sgm_type
         self.sgm_threshold= sgm_threshold
         self.epochs=epochs
@@ -74,11 +75,15 @@ class unetSegmentationNet(LightningModule):
         loss = self._common_step(batch, batch_idx, "val") 
         return loss
         
+    def on_test_epoch_start(self):
+        self.all_preds.clear()
+        self.all_labels.clear()
+
     def test_step(self, batch, batch_idx):
         images, masks, cat_id = batch
         logits = self(images)
 
-        loss = self.loss(logits, masks)
+        loss = self.loss(logits, masks if self.num_classes == 1 else masks.argmax(1))
         self.log('test_loss', loss)
 
         logits_hard = self.predict_hard_mask(images, self.sgm_threshold)
@@ -117,35 +122,8 @@ class unetSegmentationNet(LightningModule):
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.parameters(), lr=self.lr)
         sch = torch.optim.lr_scheduler.OneCycleLR(optimizer, max_lr = self.max_lr, epochs=self.epochs, steps_per_epoch = int(math.ceil(self.len_dataset / self.batch_size)))
-        return [optimizer], [sch]
+        return {"optimizer": optimizer, "lr_scheduler": {"scheduler": sch, "interval": "step"}}
         
 
     def _common_step(self, batch, batch_idx, stage):
-        img, actual_mask, cat_id = batch
-        mask_predicted = self(img)
-        #print(mask_predicted.shape) torch.Size([4, 4, 448, 448])
-        #print(actual_mask.shape) torch.Size([4, 4, 448, 448])
-        if (self.num_classes>1):
-            _, actual_mask_classes = actual_mask.max(dim=1) 
-            loss = self.loss(mask_predicted, actual_mask_classes)
-        else:
-            loss = self.loss(mask_predicted, actual_mask)
-        self.log(f"{stage}_loss", loss, on_step=True)
-
-        mask_predicted_hard = self.predict_hard_mask(img, self.sgm_threshold)
-
-        if self.num_classes == 1:
-            compute_met = BinaryMetrics()
-            met = compute_met(actual_mask, mask_predicted_hard, cat_id)
-            self.log(f"{stage}_acc", met["pixel_acc"])
-            self.log(f"{stage}_jaccard", met["jaccard"])
-            self.log(f"{stage}_dice", met["dice"])
-        else:
-            compute_met = MultiClassMetrics()
-            met = compute_met(actual_mask, mask_predicted_hard, cat_id)
-            self.log(f"{stage}_acc", met["pixel_acc"])
-            self.log(f"{stage}_dice", met["dice"])
-            
-        return loss
-    
-    
+        return segmentation_step(self, batch, stage)

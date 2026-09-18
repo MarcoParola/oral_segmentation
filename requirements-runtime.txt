@@ -1,0 +1,18 @@
+# Install the platform-specific torch/torchvision pair FIRST (see docs/运行与昇腾适配.md).
+# This list deliberately does not pin/install a CUDA framework.
+# Before installing, snapshot/protect existing platform packages:
+# python -m scripts.platform_guard create --device <cpu|npu> --output artifacts/platform-before
+# pip install -c artifacts/platform-before/constraints.txt -r requirements-runtime.txt
+# Review preflight warnings before proceeding; never install a CUDA torch for NPU.
+# Lightning 2.1 still imports pkg_resources (removed in setuptools 82+).
+setuptools==75.8.2
+numpy==1.26.4
+pillow==10.4.0
+pytorch-lightning==2.1.0
+torchmetrics==1.2.1
+hydra-core==1.3.2
+matplotlib==3.8.4
+scikit-learn==1.3.2
+tensorboard==2.15.2
+segmentation-models-pytorch==0.3.3
+pytest==8.3.5

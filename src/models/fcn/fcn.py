@@ -5,24 +5,24 @@ import torch.nn as nn
 import math
 from torchvision import models
 from pytorch_lightning import LightningModule
-from torchvision.prototype import models as PM
 
 from ...metricsHardSegmentation import *
+from ..training import segmentation_step
 
 class FcnSegmentationNet(LightningModule):
-    def __init__(self, classes=1, lr=5e-7, epochs=1000, len_dataset=0, batch_size=0, loss=nn.BCEWithLogitsLoss(), 
-                sgm_type="hard", sgm_threshold=0.5, max_lr=1e-3, model_type="fcn", version_number=0):
+    def __init__(self, classes=1, lr=5e-7, epochs=1000, len_dataset=0, batch_size=0, loss=None,
+                sgm_type="hard", sgm_threshold=0.5, max_lr=1e-3, model_type="fcn", version_number=0, weights=None):
         super(FcnSegmentationNet, self).__init__() # call parent's constructor function to inherit its methods
         self.save_hyperparameters(ignore=['loss'])
 
-        self.model = models.segmentation.fcn_resnet50(weights='DEFAULT') # use a pretrained network
+        self.model = models.segmentation.fcn_resnet50(weights=weights, weights_backbone=None, aux_loss=True) # use a pretrained network
         #replacing the fifth classifier layer of the pre-trained model with a new convolution layer
         #which will transform the 512 feature maps into a number of channels equal to num_classes.
         self.model.classifier[4] = nn.Conv2d(512, classes, kernel_size=(1, 1), stride=(1, 1))
         
         self.num_classes=classes
         self.lr = lr
-        self.loss = loss
+        self.loss = loss if loss is not None else (nn.BCEWithLogitsLoss() if classes == 1 else nn.CrossEntropyLoss())
         self.sgm_type=sgm_type
         self.sgm_threshold= sgm_threshold
         self.epochs=epochs
@@ -65,11 +65,15 @@ class FcnSegmentationNet(LightningModule):
         loss = self._common_step(batch, batch_idx, "val")
         return loss
         
+    def on_test_epoch_start(self):
+        self.all_preds.clear()
+        self.all_labels.clear()
+
     def test_step(self, batch, batch_idx):
         images, masks, cat_id = batch
         logits = self(images)
 
-        loss = self.loss(logits, masks)
+        loss = self.loss(logits, masks if self.num_classes == 1 else masks.argmax(1))
         self.log('test_loss', loss)
 
         logits_hard = self.predict_hard_mask(images, self.sgm_threshold)
@@ -108,31 +112,8 @@ class FcnSegmentationNet(LightningModule):
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.parameters(), lr=self.lr)
         sch = torch.optim.lr_scheduler.OneCycleLR(optimizer, max_lr = self.max_lr, epochs=self.epochs, steps_per_epoch = int(math.ceil(self.len_dataset / self.batch_size)))
-        return [optimizer], [sch]
+        return {"optimizer": optimizer, "lr_scheduler": {"scheduler": sch, "interval": "step"}}
         
 
     def _common_step(self, batch, batch_idx, stage):
-        img, actual_mask, cat_id = batch
-        mask_predicted = self.model(img)['out']
-        if (self.num_classes>1):
-            # conversion from one-hot to classes 0,1,2,3
-            _, actual_mask_classes = actual_mask.max(dim=1) 
-            loss = self.loss(mask_predicted, actual_mask_classes)
-        else:
-            loss = self.loss(mask_predicted, actual_mask)
-        self.log(f"{stage}_loss", loss, on_step=True)
-
-        mask_predicted_hard = self.predict_hard_mask(img, self.sgm_threshold)
-        
-        if self.num_classes == 1:
-            compute_met = BinaryMetrics()
-            met = compute_met(actual_mask, mask_predicted_hard, cat_id)
-            self.log(f"{stage}_acc", met["pixel_acc"])
-            self.log(f"{stage}_jaccard", met["jaccard"])
-            self.log(f"{stage}_dice", met["dice"])
-        else:
-            compute_met = MultiClassMetrics()
-            met = compute_met(actual_mask, mask_predicted_hard, cat_id)
-            self.log(f"{stage}_acc", met["pixel_acc"])
-            self.log(f"{stage}_dice", met["dice"])
-        return loss
+        return segmentation_step(self, batch, stage)
