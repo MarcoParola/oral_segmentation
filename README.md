@@ -58,7 +58,7 @@ mkdir data
 
 
 ## Download dataset
-Download the oral coco-dataset (both images and json file) from TODO-put-link. Copy them into `data` folder and unzip the file `oral1.zip`.
+Download the oral coco-dataset (both images and json file) from [POCI: Photographic Oral Cancer Imaging dataset](https://www.kaggle.com/datasets/marcoparola7/poci-photographic-oral-cancer-imaging-dataset/). Copy them into `data` folder and unzip the file `oral1.zip`.
 
 ## Usage
 Regarding the usage of this repo, in order to reproduce the experiments, we organize the workflow in two part: (i) data preparation and (ii) deep learning experiments.
