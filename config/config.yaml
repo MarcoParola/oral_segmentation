@@ -7,23 +7,28 @@ model:
   sgm_threshold: 0.5
 
 dataset:
-  train: ./data/train.json
-  val: ./data/val.json
-  test: ./data/test.json
+  train: ./archive/train.json
+  val: ./archive/val.json
+  test: ./archive/test.json
   resize: 448
 
 train:
-  save_path: "./models/"
+  save_path: "./artifacts/lightning/"
   seed: 42
   batch_size: 4
   lr: 5e-7
   lr_unet: 1e-4
   max_lr: 1e-3
+  # Explicit device; old accelerator/devices are retained for legacy test scripts.
+  device: "cuda:0"
   accelerator: "gpu"
   devices: 1
   max_epochs: 1000
-  pretrained: True
-  num_workers: 11
+  pretrained: False
+  max_steps: -1
+  limit_train_batches: 1.0
+  limit_val_batches: 1.0
+  num_workers: 0
   patience: 10
 
 test:

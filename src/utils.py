@@ -105,15 +105,15 @@ def get_model(hyper_parameters, model_type, check_path, sgm_threshold, num_class
     """
 
     if(model_type=="fcn"):
-        model = FcnSegmentationNet.load_from_checkpoint(check_path, num_classes = num_classes, sgm_threshold = sgm_threshold, version_number=version_number, strict=False)
+        model = FcnSegmentationNet.load_from_checkpoint(check_path, classes = num_classes, weights=None, sgm_threshold = sgm_threshold, version_number=version_number, strict=False)
     elif (model_type=="deeplab"):
-        model = DeeplabSegmentationNet.load_from_checkpoint(check_path, num_classes = num_classes, sgm_threshold = sgm_threshold, version_number=version_number, strict=False)
+        model = DeeplabSegmentationNet.load_from_checkpoint(check_path, classes = num_classes, weights=None, pretrained=False, sgm_threshold = sgm_threshold, version_number=version_number, strict=False)
     elif( model_type=="unet"):
         encoder_name = hyper_parameters["encoder_name"]
         if(encoder_name == "efficientnet-b7"):
-            model = unetSegmentationNet.load_from_checkpoint(check_path, num_classes = num_classes, sgm_threshold = sgm_threshold, encoder_name="efficientnet-b7", version_number=version_number, strict=False)
+            model = unetSegmentationNet.load_from_checkpoint(check_path, classes = num_classes, encoder_weights=None, sgm_threshold = sgm_threshold, encoder_name="efficientnet-b7", version_number=version_number, strict=False)
         elif (encoder_name == "resnet50"):
-            model = unetSegmentationNet.load_from_checkpoint(check_path, num_classes = num_classes, sgm_threshold = sgm_threshold, encoder_name="resnet50", version_number=version_number, strict=False)
+            model = unetSegmentationNet.load_from_checkpoint(check_path, classes = num_classes, encoder_weights=None, sgm_threshold = sgm_threshold, encoder_name="resnet50", version_number=version_number, strict=False)
     else:
         print("Network type error not covered in the test")
         model = False

@@ -1,3 +1,7 @@
+> **正式上卡前准备已补齐**：新增只读环境预检、平台依赖约束保护、同checkpoint真实样本跨设备数值验收。执行顺序与最新证据见 [正式上卡前检查](docs/正式上卡前检查.md)。CPU→CPU已验收；NPU仍待实机授权与配套确认。
+
+> **新数据开工验证（2026-09）**：已补齐原项目训练阻断修复和真实样本短跑。请先看 [运行与昇腾910适配](docs/运行与昇腾适配.md) 与 [实测结果](docs/实测结果.md)。本轮为 CPU FP32 工程验收，NPU 只完成准备；新 archive 存在跨 split 完全重复图像，不代表论文复现或医疗精度达标。
+
 # **Oral segmentation**
 
 [![license](https://img.shields.io/github/license/MarcoParola/oral_segmentation?style=plastic)]()
@@ -54,7 +58,7 @@ mkdir data
 
 
 ## Download dataset
-Download the oral coco-dataset (both images and json file) from TODO-put-link. Copy them into `data` folder and unzip the file `oral1.zip`.
+Download the oral coco-dataset (both images and json file) from [POCI: Photographic Oral Cancer Imaging dataset](https://www.kaggle.com/datasets/marcoparola7/poci-photographic-oral-cancer-imaging-dataset/). Copy them into `data` folder and unzip the file `oral1.zip`.
 
 ## Usage
 Regarding the usage of this repo, in order to reproduce the experiments, we organize the workflow in two part: (i) data preparation and (ii) deep learning experiments.
